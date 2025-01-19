@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 80%;
+            max-width: 450px;
+            min-width: 250px;
+            text-align: center;
+            transition: transform 1s ease-in-out;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 3rem;
+        }
+
+        input {
+            width: 100%;
+            max-width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            transition: border-color 0.3s, width 0.3s, box-shadow 0.3s;
+        }
+
+        input:focus {
+            border-color: #007BFF;
+            outline: none;
+        }
+
+        input.error {
+            border-color: red;
+            box-shadow: 0 0 5px red;
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-5px);
+            }
+            50% {
+                transform: translateX(5px);
+            }
+            75% {
+                transform: translateX(-5px);
+            }
+        }
+
+        .error-message {
+            color: red;
+            font-size: 0.9rem;
+            margin-top: -10px;
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: translateY(-5px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .error-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .btn {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            color: #fff;
+            background-color: #007BFF;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 10rem;
+            height: 3.5rem;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .wave-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: wave 0.6s ease-out;
+        }
+
+        @keyframes wave {
+            from {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            to {
+                width: 300px;
+                height: 300px;
+                opacity: 0;
+            }
+        }
+
+        .loading {
+            width: 6rem;
+            height: 6rem;
+            border: 4px solid #e9f3ff;
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .transition-left {
+            transform: translateX(-100rem);
+        }
+
+        .button-transition {
+            width: 10rem;
+            height: 10rem;
+            border-radius: 10%;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.6s ease;
+        }
+
+        #second-window {
+            display: none;
+            font-size: 2rem;
+        }
+
+        .show {
+            display: flex;
+        }
+        .checkmark {
+            display: inline-block;
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: solid 3px #fff;
+            border-radius: 4px;
+            transform: rotate(45deg);
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+
+        .cross {
+            display: inline-block;
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: transparent;
+            border: solid 3px #fff;
+            transform: rotate(45deg);
+            opacity: 0;
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+
+        .cross.show {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="login-container">
+        <h1>Вход</h1>
+        <input type="email" placeholder="Email" id="email">
+        <div id="email-error" class="error-message"></div>
+        <input type="password" placeholder="Пароль" id="password">
+        <div id="password-error" class="error-message"></div>
+        <button class="btn" id="login-btn">Войти</button>
+    </div>
+
+    <div id="second-window" class="container">
+        <h1>Второе окно</h1>
+    </div>
+
+    <script>
+        const loginBtn = document.getElementById('login-btn');
+        const loginContainer = document.getElementById('login-container');
+        const secondWindow = document.getElementById('second-window');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const emailError = document.getElementById('email-error');
+        const passwordError = document.getElementById('password-error');
+
+        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+
+        const validateInput = (input, regex, errorMessageElement, errorMessage) => {
+            if (!regex.test(input.value)) {
+                input.classList.add('error');
+                errorMessageElement.textContent = errorMessage;
+                errorMessageElement.classList.add('show');
+                input.classList.remove('shake');
+                void input.offsetWidth; // Перезапуск анимации
+                input.classList.add('shake');
+                return false;
+            } else {
+                input.classList.remove('error');
+                errorMessageElement.textContent = '';
+                errorMessageElement.classList.remove('show');
+                return true;
+            }
+        };
+
+        emailInput.addEventListener('input', () => {
+            emailInput.classList.remove('error');
+            emailError.textContent = '';
+            emailError.classList.remove('show');
+        });
+
+        passwordInput.addEventListener('input', () => {
+            passwordInput.classList.remove('error');
+            passwordError.textContent = '';
+            passwordError.classList.remove('show');
+        });
+
+        loginBtn.addEventListener('click', (event) => {
+            const wave = document.createElement('span');
+            wave.classList.add('wave-effect');
+            const rect = loginBtn.getBoundingClientRect();
+            wave.style.left = `${event.clientX - rect.left}px`;
+            wave.style.top = `${event.clientY - rect.top}px`;
+            loginBtn.appendChild(wave);
+
+            wave.addEventListener('animationend', () => {
+                wave.remove();
+            });
+
+
+            const isEmailValid = validateInput(
+                emailInput,
+                emailRegex,
+                emailError,
+                'Пожалуйста, введите корректный email.'
+            );
+            const isPasswordValid = validateInput(
+                passwordInput,
+                passwordRegex,
+                passwordError,
+                'Пароль должен содержать букву, цифру и специальный символ.'
+            );
+            if (!isEmailValid || !isPasswordValid) {
+                event.preventDefault();
+                // return;
+            }
+            setTimeout(() => {
+                loginBtn.classList.add('button-transition'); // Увеличение размера кнопки
+                loginBtn.style.transition = 'all 0.6s ease';
+
+                // Плавное исчезновение текста с сжатием
+                const buttonText = loginBtn.textContent;
+                loginBtn.innerHTML = `<span class="button-text">${buttonText}</span>`;
+                const buttonTextSpan = loginBtn.querySelector('.button-text');
+                buttonTextSpan.style.display = 'inline-block';
+                buttonTextSpan.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
+                buttonTextSpan.style.transformOrigin = 'center';
+                buttonTextSpan.style.opacity = '1';
+
+                setTimeout(() => {
+                    buttonTextSpan.style.transform = 'scale(0)';
+                    buttonTextSpan.style.opacity = '0';
+
+                    // Плавное появление лоадера
+                    setTimeout(() => {
+                        loginBtn.innerHTML = '<div class="loading"></div>';
+                        const loader = loginBtn.querySelector('.loading');
+                        loader.style.width = '0';
+                        loader.style.height = '0';
+                        loader.style.opacity = '0';
+                        loader.style.transition = 'width 0.4s ease, height 0.4s ease, opacity 0.4s ease';
+
+                        // Начинаем увеличение и проявление лоадера
+                        setTimeout(() => {
+                            loader.style.width = '6rem'; // Увеличение ширины
+                            loader.style.height = '6rem'; // Увеличение высоты
+                            loader.style.opacity = '1'; // Плавное проявление
+                        }, 50);
+                    }, 400); // Длительность исчезновения текста
+                }, 400); // Задержка перед появлением лоадера
+                setTimeout(() => {
+                    loginContainer.classList.add('transition-left');
+                    setTimeout(() => {
+                        loginContainer.style.display = 'none';
+                        secondWindow.classList.add('show');
+                        secondWindow.style.display = 'flex';
+                    }, 800);
+                }, 2000);
+            }, 400); // Задержка перед началом анимации кнопки
+        });
+    </script>
+</body>
+</html>
