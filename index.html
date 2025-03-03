@@ -5,57 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/main.css">
     <title>Animated Login</title>
-    <style>
-        #result-block {
-            background-color: #f0f0f0;
-            padding: 20px;
-            margin-top: 20px;
-            border-radius: 5px;
-            display: flex;
-            width: 80%;
-        }
-
-        .result-item {
-            margin-bottom: 10px;
-        }
-
-        #result-block.hidden {
-            display: none;
-        }
-
-        .analysis-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .input-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        #settings-btn {
-            position: fixed;
-            bottom: -100px;
-            right: 20px;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.5s;
-        }
-
-        #settings-btn.hidden {
-            bottom: -100px;
-        }
-    </style>
 </head>
 <body>
-    <div class="window left" id="window-1">
+    <div class="window center" id="window-1">
         <div class="container" id="login-container">
             <h1>Вход</h1>
             <input type="email" placeholder="Email" id="email">
@@ -65,84 +17,114 @@
             <button class="btn" id="login-btn">Войти</button>
         </div>
     </div>
-    <div class="window center" id="window-2">
-        <div id="second-window" class="container-long">
-            <div id="analysis-block" class="analysis-container">
+    <div class="window right" id="window-2">
+        <div class="container max">
+            <div class="container long center" id="request-container">
                 <h1 id="analysis-title">Анализ товара</h1>
-                <div class="input-group">
-                    <input type="text" placeholder="Введите данные для анализа" id="analysis-input">
-                    <button class="btn" id="analyze-btn">Анализ</button>
-                </div>
+                <input type="text" placeholder="Введите данные для анализа" id="analysis-input" style="width: 98%;">
+                <div id="request-error" class="error-message"></div>
+                <button class="btn" id="analyze-btn">Анализ</button>
             </div>
-            <div id="result-block" class="hidden">
-                <div class="result-item"><p id="typing-text-1"></p></div>
-                <div class="result-item"><p id="typing-text-2"></p></div>
-                <div class="result-item"><p id="typing-text-3"></p></div>
+            <div class="container long" id="answer-container">
+                <div class="horizontal-item smaller disappear">
+                    <p id="typing-text-1"></p>
+                </div>
+                <div class="horizontal-item smaller disappear ">
+                    <p id="typing-text-2"></p>
+                </div>
+                <div class="horizontal-item smaller disappear">
+                    <p id="typing-text-3"></p>
+                </div>
             </div>
         </div>
     </div>
-    <button id="settings-btn" class="hidden">Настройки</button>
-    <script>
-        const analyzeBtn = document.getElementById('analyze-btn');
-        const analysisBlock = document.getElementById('analysis-block');
-        const title = document.getElementById('analysis-title');
-        const input = document.getElementById('analysis-input');
-        const resultBlock = document.getElementById('result-block');
-        const settingsBtn = document.getElementById('settings-btn');
+    <button class="btn history disappear" id="sidebar-toggle">
+        <svg viewBox="0 -53 364 364"><path d="m368 154.667969h-352c-8.832031 0-16-7.167969-16-16s7.167969-16 16-16h352c8.832031 0 16 7.167969 16 16s-7.167969 16-16 16zm0 0"/><path d="m368 32h-352c-8.832031 0-16-7.167969-16-16s7.167969-16 16-16h352c8.832031 0 16 7.167969 16 16s-7.167969 16-16 16zm0 0"/><path d="m368 277.332031h-352c-8.832031 0-16-7.167969-16-16s7.167969-16 16-16h352c8.832031 0 16 7.167969 16 16s-7.167969 16-16 16zm0 0"/></svg>
+    </button>
+    <button id="settings-btn" class="btn hidden">Настройки</button>
+    <div id="sidebar" class="container high">
+        <h2>Анализы</h2>
+        <button class="btn" id="new-request-btn" style="width: 100%; margin: 15px 0;">Новый запрос</button>
+        
+        <h3>Сегодня</h3>
+        <div id="today-tasks" class="container long">
+            <div class="task-item">Пример задачи с очень </div>
+            <div class="task-item">Вторая задача сегодняш</div>
+            <div class="task-item">Ещё одна выполненная</div>
+        </div>
+    
+        <div class="storage-info">Хранится 30 дней</div>
+        
+        <div id="archive-tasks" class="container long">
+            <div class="task-item">Задача прошлой недели</div>
+            <div class="task-item">Старый анализ товаров</div>
+            <div class="task-item">Архивная запись за</div>
+        </div>
+    </div>
+    
+    <div class="container overlay down" id="overlay">
+        <button class="btn close" id="close-btn"><svg viewBox="2 2 28 28" style="fill: #ffffff;"><path d="m18.828 16 4.586-4.586a2 2 0 1 0 -2.828-2.828l-4.586 4.586-4.586-4.586a2 2 0 0 0 -2.828 2.828l4.586 4.586-4.586 4.586a2 2 0 1 0 2.828 2.828l4.586-4.586 4.586 4.586a2 2 0 0 0 2.828-2.828z"/></svg></button>
+        <div class="container long">
+            <h2>Конкуренты</h2> 
+            <div class="carousel" id="carousel">
+                <div class="vertical-item">
+                    <div class="image-wrapper">
+                        <div class="image-container"> 
+                            <img src="https://basket-10.wbbasket.ru/vol1411/part141123/141123701/images/big/2.webp" class="product-image" alt="Товар">
+                        </div>
+                    </div>
+                    <button class="btn small">Подробнее</button>
+                    <div class="rating">Рейтинг: 4.8/5</div>
+                    <h3>Название товара</h3>
+                    <p class="price">$299.99</p>
+                </div>
+            </div>
+            <button class="carousel-btn prev">
+                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"/></svg>
+            </button>
+            
+            <button class="carousel-btn next">
+                <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+            </button>
+           
 
-        const typingText1 = document.getElementById('typing-text-1');
-        const typingText2 = document.getElementById('typing-text-2');
-        const typingText3 = document.getElementById('typing-text-3');
+            <div class="container long" style="background-color: #ffffff; margin: 1rem; padding: 1rem;max-height: 300px; overflow: auto; ">
 
-        let typingAnimationEnabled = true; // Переменная для отключения/включения анимации печати
 
-        analyzeBtn.addEventListener('click', () => {
-            // Анимация перемещения всего блока вверх
-            analysisBlock.style.transition = 'all 0.5s';
-            analysisBlock.style.transform = 'translateY(-100%)';
 
-            // Уменьшение размера инпута и использование флекс для размещения кнопки на следующей строке
-            input.style.transition = 'all 0.5s';
-            analyzeBtn.style.transition = 'all 0.5s';
+                <h3>Ключевые слова</h3>
+                <div class="container long word green" id="container-used-word" style="overflow: auto;">
+                    <div class="keyword-item">
+                        Электроника
+                        <button></button>
+                    </div>
+                    <div class="keyword-item" >
+                        Техника
+                        <button></button>
+                    </div>
+                </div>
 
-            input.style.flex = '0 1 70%';
-            analyzeBtn.style.flex = '0 1 25%';
-
-            // Появление блока с результатом
-            setTimeout(() => {
-                resultBlock.classList.remove('hidden');
-                if (typingAnimationEnabled) {
-                    typeText('Результат анализа товара 1.', typingText1);
-                    typeText('Результат анализа товара 2.', typingText2);
-                    typeText('Результат анализа товара 3.', typingText3);
-                } else {
-                    typingText1.textContent = 'Результат анализа товара 1.';
-                    typingText2.textContent = 'Результат анализа товара 2.';
-                    typingText3.textContent = 'Результат анализа товара 3.';
-                }
-
-                // Плавное появление кнопки настроек
-                settingsBtn.classList.remove('hidden');
-                settingsBtn.style.transition = 'all 0.5s';
-                settingsBtn.style.bottom = '20px';
-            }, 600);
-        });
-
-        function typeText(text, element) {
-            element.textContent = '';
-            let i = 0;
-            const interval = setInterval(() => {
-                if (i < text.length) {
-                    element.textContent += text[i];
-                    i++;
-                } else {
-                    clearInterval(interval);
-                }
-            }, 50);
-        }
-    </script>
+                <h3>Не использованные ключевые слова</h3>
+                <div class="container long word red" id="container-unused-word" style="overflow: auto;">
+                    <div class="keyword-item">
+                        Гаджеты
+                        <button></button>
+                    </div>
+                    <div class="keyword-item">
+                       Аксессуары
+                        <button></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="./js/main.js"></script>
+    <script src="./js/inputs.js"></script>
+    <script src="./js/buttons.js"></script>
+    <script src="./js/request.js"></script>
     <script src="./js/enter.js"></script>
+    
+
     
 
 </body>

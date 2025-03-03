@@ -1,5 +1,9 @@
 @import url(windows.css);
 @import url(buttons.css);
+@import url(containers.css);
+@import url(carousel.css);
+@import url(animation.css);
+
 
 * {
     margin: 0;
@@ -17,28 +21,6 @@ body {
     overflow: hidden;
 }
 
-.container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    width: 80%;
-    max-width: 450px;
-    min-width: 250px;
-    text-align: center;
-    transition: transform 1s ease-in-out;
-}
-.container-long {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    width: 100%;
-    min-width: 250px;
-    text-align: center;
-    transition: transform 1s ease-in-out;
-}
-
 h1 {
     display: flex;
     margin-bottom: 20px;
@@ -48,6 +30,7 @@ h1 {
 input {
     border: none; 
     outline: none;
+    overflow: visible;
     border-top-left-radius: 1rem; 
     border-top-right-radius: 1rem; 
     border-bottom: 2px solid #000; 
@@ -72,21 +55,6 @@ input.error {
     animation: shake 0.3s ease-in-out;
     }
 
-@keyframes shake {
-    0%, 100% {
-        transform: translateX(0);
-    }
-    25% {
-        transform: translateX(-5px);
-    }
-    50% {
-        transform: translateX(5px);
-    }
-    75% {
-        transform: translateX(-5px);
-    }
-}
-
 .error-message {
     color: red;
     font-size: 0.9rem;
@@ -102,8 +70,6 @@ input.error {
     transform: translateY(0);
 }
 
-
-
 .loading {
     width: 6rem;
     height: 6rem;
@@ -112,16 +78,6 @@ input.error {
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
 
 .button-transition {
     width: 10rem;

@@ -18,3 +18,49 @@ function nextToContainer(idCurrentContainer, idNextContainer) {
         }
     }, 200);
 }
+
+function typeText(text, element) {
+    element.textContent = '';
+    let i = 0;
+    const interval = setInterval(() => {
+        if (i < text.length) {
+            element.textContent += text[i];
+            i++;
+        } else {
+            clearInterval(interval);
+        }
+    }, 50);
+}
+
+const element = document.querySelector('.container.long');
+const elementHeight = element.offsetHeight;
+element.style.setProperty('--element-height', `${elementHeight}px`);
+undefined
+
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+});
+
+function checkAuth() {
+    // Проверяем наличие access token в cookie
+
+    if (localStorage.getItem('accessToken') && localStorage.getItem('refreshToken')) {
+        nextToContainer('window-1', 'window-2');
+    } else {
+    }
+}
+
+// Обновляем функцию успешного входа
+function showSuccessAnimation(button, callback) {
+    button.innerHTML = `
+        <div class="icon checkmark">
+            <div class="checkmark-stem"></div>
+            <div class="checkmark-kick"></div>
+        </div>`;
+    setTimeout(() => {
+        // Устанавливаем cookies при успешном входе
+        document.cookie = `accessToken=${localStorage.getItem('accessToken')}; path=/; max-age=86400`;
+        document.cookie = `refreshToken=${localStorage.getItem('refreshToken')}; path=/; max-age=2592000`;
+        callback();
+    }, 1000);
+}

@@ -1,0 +1,72 @@
+.carousel-container {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.carousel {
+    display: flex;
+    overflow-x: auto;
+    width: 100%;
+    padding: 20px 0;
+    gap: 15px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+}
+
+.carousel::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.carousel::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.carousel::-webkit-scrollbar-thumb {
+    background: #2196F3;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.carousel::-webkit-scrollbar-thumb:hover {
+    background: #1976D2;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    background: #2196F3;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.carousel-btn:hover {
+    background: #1976D2;
+    transform: translateY(-20%) scale(1.1);
+}
+
+.carousel-btn.prev {
+    left: 20px;
+}
+
+.carousel-btn.next {
+    right: 20px;
+}
+
+.carousel-btn svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
+}
