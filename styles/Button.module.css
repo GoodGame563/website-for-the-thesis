@@ -1,0 +1,76 @@
+.btn {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  color: #fff;
+  background-color: #007BFF;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  width: 10rem;
+  height: 3.5rem;
+}
+
+.small {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  height: 2.5rem;
+  margin: 1rem;
+}
+
+.close {
+  position: absolute;
+  right: 2vw;
+  top: 2vh;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+}
+
+.history {
+  position: fixed;
+  top: 2%;
+  left: 2%;
+  width: 60px;
+  height: 60px;
+  padding: 1.3rem;
+  fill: #fff;
+}
+
+.disabled {
+  cursor: not-allowed;
+  background-color: #007BFF;
+  color: #fff;
+  opacity: 0.7;
+}
+
+.loading {
+  transform: scale(1.3); /* Увеличение кнопки при загрузке */
+}
+
+.btn:hover:not(.disabled) {
+  background-color: #0056b3;
+}
+
+.waveEffect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: wave 0.6s ease-out;
+}
+
+@keyframes wave {
+  from { width: 0; height: 0; opacity: 1; }
+  to { width: 300px; height: 300px; opacity: 0; }
+}

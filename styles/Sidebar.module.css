@@ -1,0 +1,100 @@
+.toggleBtn {
+  position: fixed;
+  top: 2%;
+  left: 2%;
+  width: 60px; /* Квадратная форма */
+  height: 60px;
+  padding: 0.4rem; /* Центрирование SVG */
+  fill: #fff;
+  z-index: 998;
+}
+
+.sidebar {
+  left: 0;
+  display: flex;
+  position: fixed;
+  justify-content: flex-start;
+  flex-direction: column;
+  align-items: start;
+  flex-wrap: wrap;
+  width: 30%;
+  height: 100vh; /* Во всю высоту экрана */
+  top: 0; /* Начинается с самого верха */
+  box-shadow: 9px 0px 15px 0px rgba(0,0,0,0.1);
+  background-color: #f8f9fa;
+  max-width: 400px;
+  min-width: 280px;
+  text-align: center;
+  overflow-y: auto;
+  z-index: 999;
+  padding: 20px;
+  box-sizing: border-box;
+  transition: transform 1s ease-in-out;
+}
+
+.hidden {
+  transform: translateX(-100%);
+}
+
+.visible {
+  transform: translateX(0);
+}
+
+.newRequestBtn {
+  width: 100%;
+  margin: 15px 0;
+}
+
+.taskContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 250px;
+  text-align: center;
+}
+
+.taskItem {
+  width: 100%;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 5px 0;
+  padding: 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease; /* Плавные переходы */
+}
+
+.taskItem:hover {
+  background-color: #e0e0e0; /* Более темный фон при наведении */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Увеличенная тень */
+  transform: translateY(-2px); /* Лёгкий подъём вверх */
+}
+
+.active {
+  background: #e6ffe6; /* Светло-зелёный для активных */
+  border: 1px solid #00cc00;
+}
+
+.active:hover {
+  background: #d4ffd4; /* Чуть темнее при наведении для активных */
+}
+
+.inactive {
+  background: #ffe6e6; /* Светло-красный для неактивных */
+  border: 1px solid #ff4444;
+}
+
+.inactive:hover {
+  background: #ffd4d4; /* Чуть темнее при наведении для неактивных */
+}
+
+.storageInfo {
+  color: #666;
+  font-size: 0.9em;
+  margin: 15px 0;
+}

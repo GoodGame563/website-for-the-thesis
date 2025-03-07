@@ -1,0 +1,119 @@
+.max {
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  min-width: 250px;
+  text-align: center;
+  position: relative;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 250px;
+  text-align: center;
+  position: relative;
+  top: 0;
+  transition: transform 0.4s ease-in-out;
+}
+
+.center {
+  transform: translateY(50vh) translateY(-50%);
+}
+
+.movedUp {
+  transform: translateY(0);
+}
+
+.input {
+  border: none;
+  outline: none;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+  border-bottom: 2px solid #000;
+  background-color: #f5f3f3;
+  padding: 15px;
+  width: 98%;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input:focus {
+  border-bottom-color: #007BFF;
+  box-shadow: 0px 2px 4px rgba(0, 123, 255, 0.4);
+}
+
+.error {
+  border-color: red;
+  box-shadow: 0 0 5px red;
+}
+
+.errorMessage {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: -10px;
+  margin-bottom: 10px;
+}
+
+.answerContainer {
+  overflow-y: auto;
+  height: 60vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.horizontalItem {
+  width: 95%;
+  min-height: 5rem;
+  padding: 0.9375rem 1.5625rem;
+  margin: 0.5rem 0;
+  background: #f3f3f3;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.144);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  text-align: start;
+  overflow-y: auto;
+}
+
+.settingsBtn {
+  position: fixed !important; /* Только fixed */
+  bottom: 20px;
+  right: 20px;
+  height: 2.5rem;
+  padding: 10px 20px;
+  border-radius: 5px;
+}
+
+.buttonContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.loading {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #e9f3ff;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

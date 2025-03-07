@@ -1,0 +1,165 @@
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 250px;
+  text-align: center;
+}
+
+.closeBtn { 
+  z-index: 1;
+  position: absolute;
+  right: 2vw;
+  top: 2vh;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+}
+
+.keywordContainer {
+  background-color: #ffffff;
+  margin: 1rem;
+  padding: 1rem;
+  max-height: 21rem;
+  width: 100%;
+  overflow: auto;
+}
+
+.wordContainer {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
+  overflow: auto;
+}
+
+.keywordItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  width: 100%;
+  max-width: 300px;
+  padding: 12px 45px 12px 20px;
+  margin: 8px 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.keywordItem::after {
+  content: "";
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  height: 60%;
+  transform: translateY(-50%);
+  width: 1px;
+  background: #dee2e6;
+}
+
+.keywordItem button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 40px;
+  height: 100%;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.keywordItem button:active {
+  background: #dee2e6;
+  transform: scale(0.95);
+}
+
+.keywordItem:hover {
+  background: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.green .keywordItem {
+  background-color: #218dff;
+  color: #f5f3f3;
+}
+
+.green .keywordItem button {
+  background: #218dff;
+}
+
+.green .keywordItem button:hover {
+  background: #1e7de4;
+  color: #fff;
+}
+
+.green .keywordItem button::after {
+  content: "-";
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.red .keywordItem {
+  background-color: #0068d6;
+  color: #f5f3f3;
+}
+
+.red .keywordItem button {
+  background: #0068d6;
+}
+
+.red .keywordItem button:hover {
+  background: #004da0;
+  color: #fff;
+}
+
+.red .keywordItem button::after {
+  content: "+";
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+.notificationList {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1100;
+}
+
+.notification {
+  background: #ff4444;
+  color: #fff;
+  padding: 10px 20px;
+  margin: 5px 0;
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  max-width: 300px;
+  text-align: center;
+}

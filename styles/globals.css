@@ -1,0 +1,45 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+h1 {
+  display: flex;
+  margin-bottom: 20px;
+  font-size: 3rem;
+}
+
+.window {
+  position: absolute;
+  display: flex;
+  width: 90%;
+  height: 90%;
+  justify-content: center;
+  align-items: center;
+}
+.app-container{
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+}
+#__next{
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
