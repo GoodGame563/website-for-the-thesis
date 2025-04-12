@@ -1,29 +1,29 @@
-import { useRef } from 'react';
+import { useState } from 'react';
 import styles from '../styles/Button.module.css';
 
-export default function Button({ children, onClick, disabled, className, isLoading }) {
-  const buttonRef = useRef(null);
+export default function Button({ children, onClick, className = '', isLoading = false, disabled = false }) {
+  const [rippleEffect, setRippleEffect] = useState(false);
 
   const handleClick = (e) => {
-    if (disabled) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const wave = document.createElement('span');
-    wave.className = styles.waveEffect;
-    wave.style.left = `${e.clientX - rect.left}px`;
-    wave.style.top = `${e.clientY - rect.top}px`;
-    buttonRef.current.appendChild(wave);
-    wave.addEventListener('animationend', () => wave.remove());
-    onClick?.(e);
+    if (disabled || isLoading) return;
+    
+    setRippleEffect(true);
+    setTimeout(() => setRippleEffect(false), 600);
+    
+    if (onClick) {
+      onClick(e);
+    }
   };
 
+  const buttonClassName = `${styles.btn} ${className} ${disabled ? styles.disabled : ''} ${isLoading ? styles.loading : ''}`;
+
   return (
-    <button
-      ref={buttonRef}
-      className={`${styles.btn} ${className || ''} ${disabled ? styles.disabled : ''} ${isLoading ? styles.loading : ''}`}
-      onClick={handleClick}
-      disabled={disabled}
-    >
-      {children}
+    <button className={buttonClassName} onClick={handleClick} disabled={disabled}>
+      <div className={`${styles.buttonContent} ${isLoading ? styles.loading : ''}`}>
+        <span>{children}</span>
+        <div className={styles.loader} />
+      </div>
+      {rippleEffect && <div className={styles.waveEffect} />}
     </button>
   );
 }

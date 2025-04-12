@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from '../styles/Overlay.module.css';
 import Button from './Button';
 import Carousel from './Carousel';
+import ConfirmationModal from './ConfirmationModal';
 
 // Определение домена Wildberries
 const getUrl = (nomenclature) => {
@@ -59,194 +60,334 @@ const getAllPhotoUrl = async (nomenclature) => {
   return url;
 };
 
-export default function Overlay({ onClose, carouselItems = [], usedWords: initialUsedWords = [], unusedWords: initialUnusedWords = [] }) {
+const LoadingAnimation = () => {
+  const [dots, setDots] = useState('');
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => {
+        if (prev === '...') return '';
+        return prev + '.';
+      });
+    }, 500);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <motion.div 
+      className={styles.loadingContainer}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <div className={styles.loadingText}>
+        Поиск товаров{dots}
+      </div>
+    </motion.div>
+  );
+};
+
+export default function Overlay({ onClose, carouselItems = [], photoUrls = [], usedWords: initialUsedWords = [], unusedWords: initialUnusedWords = [], onWordChange, isGenerating, isSearchingProducts, setIsSearchingProducts }) {
   const [isVisible, setIsVisible] = useState(false);
-  const [photoUrls, setPhotoUrls] = useState([]);
+  const [isCarouselReady, setIsCarouselReady] = useState(false);
   const [usedWords, setUsedWords] = useState(initialUsedWords);
   const [unusedWords, setUnusedWords] = useState(initialUnusedWords);
-  const [notifications, setNotifications] = useState([]); // Состояние для уведомлений
+  const [notifications, setNotifications] = useState([]);
+  const [isChanged, setIsChanged] = useState(false);
+  const [hasAppliedChanges, setHasAppliedChanges] = useState(false);
+  const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
 
-  // Анимации оверлея
-  const overlayVariants = {
-    hidden: { y: '100%', opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease: 'easeIn' } },
-    exit: { y: '100%', opacity: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-  };
+  // Мемоизируем форматированные элементы карусели
+  const formattedItems = useMemo(() => 
+    carouselItems.map((item, index) => ({
+      image: photoUrls[index] || '',
+      title: item.name,
+      rating: item.reviewRating ? `${item.reviewRating.toFixed(1)}/5` : 'Нет рейтинга',
+      price: item.price ? `${(item.price / 100).toFixed(2)} ₽` : 'Нет цены',
+    })),
+    [carouselItems, photoUrls]
+  );
 
-  // Анимации для keywordItem
-  const keywordVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
-    exit: { opacity: 0, y: -20, transition: { duration: 0.3, ease: 'easeIn' } },
-  };
-
-  // Анимации для уведомлений
-  const notificationVariants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-    exit: { opacity: 0, y: -20, transition: { duration: 0.3 } },
-  };
-
-  // Закрытие оверлея
-  const handleClose = () => {
-    setIsVisible(false);
-    setTimeout(onClose, 500);
-  };
-
-  // Загрузка URL изображений
   useEffect(() => {
     setIsVisible(true);
+    const timer = setTimeout(() => {
+      setIsCarouselReady(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
-    const fetchPhotoUrls = async () => {
-      const urls = await Promise.all(
-        carouselItems.map(item => getAllPhotoUrl(item.id))
-      );
-      setPhotoUrls(urls);
-    };
-
-    if (carouselItems.length > 0) {
-      fetchPhotoUrls();
-    }
-  }, [carouselItems]);
-
-  // Добавление уведомления
-  const addNotification = (message) => {
-    const id = Date.now();
-    setNotifications(prev => [...prev, { id, message }]);
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(notif => notif.id !== id));
-    }, 3000); // Уведомление исчезает через 3 секунды
-  };
-
-  // Перемещение слова из usedWords в unusedWords
-  const handleRemoveWord = (word) => {
-    if (usedWords.length <= 5) {
-      addNotification('Нельзя удалить слово: минимум 5 слов в ключевых');
+  const handleAddWord = useCallback((word) => {
+    if (isGenerating) {
+      addNotification('Во время генерации нельзя менять настройки');
       return;
     }
-    setUsedWords(prev => prev.filter(w => w !== word));
-    setUnusedWords(prev => [...prev, word]);
-  };
-
-  // Перемещение слова из unusedWords в usedWords
-  const handleAddWord = (word) => {
     if (usedWords.length >= 10) {
       addNotification('Нельзя добавить слово: максимум 10 слов в ключевых');
       return;
     }
     setUnusedWords(prev => prev.filter(w => w !== word));
     setUsedWords(prev => [...prev, word]);
+    setIsChanged(true);
+  }, [usedWords.length, isGenerating]);
+
+  const handleRemoveWord = useCallback((word) => {
+    if (isGenerating) {
+      addNotification('Во время генерации нельзя менять настройки');
+      return;
+    }
+    if (usedWords.length <= 5) {
+      addNotification('Нельзя удалить слово: минимум 5 слов в ключевых');
+      return;
+    }
+    setUsedWords(prev => prev.filter(w => w !== word));
+    setUnusedWords(prev => [...prev, word]);
+    setIsChanged(true);
+  }, [usedWords.length, isGenerating]);
+
+  const addNotification = useCallback((message) => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, message }]);
+    
+    // Автоматически удаляем уведомление через 3 секунды
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(notif => notif.id !== id));
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    const isUsedWordsChanged = JSON.stringify(usedWords.sort()) !== JSON.stringify(initialUsedWords.sort());
+    const isUnusedWordsChanged = JSON.stringify(unusedWords.sort()) !== JSON.stringify(initialUnusedWords.sort());
+    setIsChanged(isUsedWordsChanged || isUnusedWordsChanged);
+  }, [usedWords, unusedWords, initialUsedWords, initialUnusedWords]);
+
+  const overlayVariants = {
+    hidden: { 
+      opacity: 0,
+    },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        duration: 0.2,
+        when: "beforeChildren",
+        staggerChildren: 0.1
+      }
+    },
+    exit: { 
+      opacity: 0,
+      transition: { 
+        duration: 0.2,
+        when: "afterChildren"
+      }
+    }
   };
 
-  // Форматируем carouselItems
-  const formattedCarouselItems = carouselItems.map((item, index) => ({
-    image: photoUrls[index] || '',
-    title: item.name,
-    rating: item.reviewRating ? `${item.reviewRating}/5` : 'Нет рейтинга',
-    price: item.price ? `${(item.price / 100).toFixed(2)} ₽` : 'Нет цены',
-  }));
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: {
+        duration: 0.2
+      }
+    },
+    exit: { 
+      opacity: 0,
+      transition: {
+        duration: 0.2
+      }
+    }
+  };
+
+  const handleSaveChanges = useCallback(async () => {
+    if (isGenerating) {
+      addNotification('Во время генерации нельзя менять настройки');
+      return;
+    }
+    try {
+      await onWordChange?.(usedWords, unusedWords);
+      setIsChanged(false);
+      setHasAppliedChanges(true);
+      addNotification('Изменения сохранены успешно');
+    } catch (error) {
+      addNotification('Ошибка при сохранении изменений');
+    }
+  }, [usedWords, unusedWords, onWordChange, isGenerating, addNotification]);
+
+  const handleClose = useCallback(() => {
+    if (isGenerating) {
+      addNotification('Во время генерации нельзя менять настройки');
+      return;
+    }
+    if (isSearchingProducts) {
+      addNotification('Подождите, идет поиск товаров...');
+      return;
+    }
+    if (isChanged && !hasAppliedChanges) {
+      setIsConfirmModalVisible(true);
+      return;
+    }
+    setIsVisible(false);
+    setTimeout(onClose, 300);
+  }, [isChanged, hasAppliedChanges, isGenerating, isSearchingProducts, onClose]);
+
+  const handleConfirmClose = useCallback(async () => {
+    await handleSaveChanges();
+    setIsConfirmModalVisible(false);
+  }, [handleSaveChanges]);
+
+  const handleCancelClose = useCallback(() => {
+    setIsConfirmModalVisible(false);
+    setIsVisible(false);
+    setTimeout(onClose, 300);
+  }, [onClose]);
 
   return (
     <motion.div
       className={styles.overlay}
       variants={overlayVariants}
       initial="hidden"
-      animate={isVisible ? 'visible' : 'exit'}
+      animate={isVisible ? "visible" : "hidden"}
+      exit="exit"
+      layoutId="overlay"
     >
-      <Button className={styles.closeBtn} onClick={handleClose}>
-        <svg viewBox="2 2 28 28" style={{ fill: '#ffffff' }}>
-          <path d="m18.828 16 4.586-4.586a2 2 0 1 0 -2.828-2.828l-4.586 4.586-4.586-4.586a2 2 0 0 0 -2.828 2.828l4.586 4.586-4.586 4.586a2 2 0 1 0 2.828 2.828l4.586-4.586 4.586 4.586a2 2 0 0 0 2.828-2.828z" />
-        </svg>
-      </Button>
-      <div className={styles.container}>
-        <Carousel
-          items={
-            formattedCarouselItems.length > 0
-              ? formattedCarouselItems
-              : [{ title: 'Нет данных', rating: 'N/A', price: 'N/A', image: '' }]
-          }
-        />
-        <div className={styles.keywordContainer}>
-          <h3>Ключевые слова</h3>
-          <div className={`${styles.wordContainer} ${styles.green}`}>
-            <AnimatePresence>
-              {usedWords.length > 0 ? (
-                usedWords.map((word, index) => (
-                  <motion.div
-                    key={word} // Используем само слово как ключ, предполагая уникальность
-                    className={styles.keywordItem}
-                    variants={keywordVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                  >
-                    {word}
-                    <button onClick={() => handleRemoveWord(word)}></button>
-                  </motion.div>
-                ))
-              ) : (
-                <motion.div
-                  key="no-used"
-                  className={styles.keywordItem}
-                  variants={keywordVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  Нет использованных слов<button></button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          <h3>Не использованные ключевые слова</h3>
-          <div className={`${styles.wordContainer} ${styles.red}`}>
-            <AnimatePresence>
-              {unusedWords.length > 0 ? (
-                unusedWords.map((word, index) => (
-                  <motion.div
-                    key={word}
-                    className={styles.keywordItem}
-                    variants={keywordVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                  >
-                    {word}
-                    <button onClick={() => handleAddWord(word)}></button>
-                  </motion.div>
-                ))
-              ) : (
-                <motion.div
-                  key="no-unused"
-                  className={styles.keywordItem}
-                  variants={keywordVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  Нет неиспользованных слов<button></button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-      </div>
+      <ConfirmationModal 
+        isVisible={isConfirmModalVisible}
+        onConfirm={handleConfirmClose}
+        onCancel={handleCancelClose}
+        message="У вас есть несохраненные изменения. Хотите сохранить их перед закрытием?"
+      />
 
-      {/* Список уведомлений */}
+      {/* Notifications should be rendered first in the DOM */}
       <div className={styles.notificationList}>
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout">
           {notifications.map((notif) => (
             <motion.div
               key={notif.id}
               className={styles.notification}
-              variants={notificationVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
             >
               {notif.message}
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
+
+      <Button 
+        className={styles.closeBtn} 
+        onClick={handleClose}
+        disabled={isSearchingProducts}
+      >
+        <motion.svg 
+          viewBox="0 0 24 24" 
+          style={{ fill: '#ffffff', width: '24px', height: '24px' }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </motion.svg>
+      </Button>
+
+      <motion.div
+        className={styles.container}
+        variants={containerVariants}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={isSearchingProducts ? 'loading' : 'carousel'}
+            className={styles.carouselContainer}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.5 }}
+          >
+            {isSearchingProducts ? (
+              <LoadingAnimation />
+            ) : (
+              isCarouselReady && (
+                <Carousel items={formattedItems.length > 0 ? formattedItems : [{ title: 'Нет данных', rating: 'N/A', price: 'N/A', image: '' }]} />
+              )
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        <motion.div 
+          className={styles.keywordContainer}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <h3>Ключевые слова</h3>
+          <div className={`${styles.wordContainer} ${styles.green}`}>
+            <AnimatePresence mode="popLayout">
+              {usedWords.map((word, index) => (
+                <motion.div
+                  key={`used-${word}-${index}`}
+                  layoutId={`word-${word}`}
+                  className={styles.keywordItem}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ 
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 30,
+                    mass: 1
+                  }}
+                >
+                  {word}
+                  <button onClick={() => handleRemoveWord(word)} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          <h3>Не использованные ключевые слова</h3>
+          <div className={`${styles.wordContainer} ${styles.red}`}>
+            <AnimatePresence mode="popLayout">
+              {unusedWords.map((word, index) => (
+                <motion.div
+                  key={`unused-${word}-${index}`}
+                  layoutId={`word-${word}`}
+                  className={styles.keywordItem}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ 
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 30,
+                    mass: 1
+                  }}
+                >
+                  {word}
+                  <button onClick={() => handleAddWord(word)} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        <AnimatePresence>
+          {isChanged && (
+            <motion.div
+              className={styles.saveButtonContainer}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+            >
+              <Button
+                onClick={handleSaveChanges}
+                className={styles.saveButton}
+              >
+                Сохранить изменения
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </motion.div>
   );
 }

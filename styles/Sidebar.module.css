@@ -10,34 +10,34 @@
 }
 
 .sidebar {
-  left: 0;
-  display: flex;
   position: fixed;
-  justify-content: flex-start;
-  flex-direction: column;
-  align-items: start;
-  flex-wrap: wrap;
+  left: 0;
+  top: 0;
+  height: 100vh;
   width: 30%;
-  height: 100vh; /* Во всю высоту экрана */
-  top: 0; /* Начинается с самого верха */
-  box-shadow: 9px 0px 15px 0px rgba(0,0,0,0.1);
-  background-color: #f8f9fa;
   max-width: 400px;
   min-width: 280px;
-  text-align: center;
-  overflow-y: auto;
+  background-color: #f8f9fa;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
   z-index: 999;
   padding: 20px;
   box-sizing: border-box;
-  transition: transform 1s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  overflow-y: auto;
+  will-change: transform;
+  pointer-events: auto;
 }
 
 .hidden {
   transform: translateX(-100%);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .visible {
   transform: translateX(0);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .newRequestBtn {
@@ -67,6 +67,77 @@
   background: #f5f5f5;
   border-radius: 4px;
   transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease; /* Плавные переходы */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.taskItem span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 8px;
+}
+
+.editButton {
+  opacity: 0;
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #666;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.taskItem:hover .editButton {
+  opacity: 1;
+}
+
+.editButton:hover {
+  color: #007BFF;
+}
+
+.editContainer {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  align-items: center;
+}
+
+.editInput {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #007BFF;
+  border-radius: 4px;
+  font-size: inherit;
+  outline: none;
+  background: white;
+}
+
+.saveButton {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  border: none;
+  background: #007BFF;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.saveButton:hover {
+  background: #0056b3;
 }
 
 .taskItem:hover {
@@ -97,4 +168,81 @@
   color: #666;
   font-size: 0.9em;
   margin: 15px 0;
+}
+
+.menuButton {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  transition: all 0.3s ease;
+}
+
+.menuButton:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+.menuButton svg {
+  width: 20px;
+  height: 20px;
+  fill: white;
+}
+
+@media (max-width: 768px) {
+  .menuButton {
+    top: 10px;
+    left: 10px;
+    width: 35px;
+    height: 35px;
+    padding: 6px;
+  }
+  
+  .menuButton svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .sidebar {
+    width: 85%;
+    min-width: 250px;
+  }
+}
+
+.notificationList {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.notification {
+  background: #ff4444;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  max-width: 300px;
+  text-align: center;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }

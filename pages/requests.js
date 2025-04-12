@@ -1,8 +1,9 @@
-import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
+import { motion } from 'framer-motion';
 import AnalysisForm from '../components/AnalysisForm';
 import Sidebar from '../components/Sidebar';
+import { TokenManager } from '../utils/tokenManager';
 
 export default function RequestsPage() {
   const router = useRouter();
@@ -10,11 +11,13 @@ export default function RequestsPage() {
   const fillFormRef = useRef(null);
 
   useEffect(() => {
-    const accessToken = localStorage.getItem('accessToken');
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!accessToken || !refreshToken) {
-      router.push('/login');
-    }
+    const checkAuth = async () => {
+      const token = await TokenManager.getValidAccessToken();
+      if (!token) {
+        router.push('/login');
+      }
+    };
+    checkAuth();
   }, [router]);
 
   const pageVariants = {

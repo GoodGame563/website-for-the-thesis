@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import styles from '../styles/AnalysisForm.module.css';
 import Button from './Button';
 import Overlay from './Overlay';
+import { TokenManager } from '../utils/tokenManager';
 
 // Извлечение ID из URL
 const fromUrlGetId = (url) => {
@@ -32,7 +33,10 @@ const getUrl = (nomenclature) => {
   if (2190 <= nomenclature && nomenclature <= 2405) return "basket-15.wbbasket.ru";
   if (2406 <= nomenclature && nomenclature <= 2621) return "basket-16.wbbasket.ru";
   if (2622 <= nomenclature && nomenclature <= 2837) return "basket-17.wbbasket.ru";
-  return "basket-18.wbbasket.ru";
+  if (2838 <= nomenclature && nomenclature <= 3053) return "basket-18.wbbasket.ru";
+  if (3054 <= nomenclature && nomenclature <= 3269) return "basket-19.wbbasket.ru";
+  if (3270 <= nomenclature && nomenclature <= 3485) return "basket-20.wbbasket.ru";
+  return "basket-21.wbbasket.ru";
 };
 
 // Генерация URL карточки
@@ -46,6 +50,39 @@ const getCardUrlWithoutUrl = (nomenclature, id) => {
   return `https://basket-${id}.wbbasket.ru/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/info/ru/card.json`;
 };
 
+// Генерация URL без явного basket-номера
+const getPhotoUrl = (nomenclature) => {
+  const domain = getUrl(Math.floor(nomenclature / 100000));
+  return `https://${domain}/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/c246x328/1.webp`;
+};
+
+// Генерация URL с явным basket-номером
+const getPhotoUrlWithoutUrl = (nomenclature, id) => {
+  return `https://basket-${id}.wbbasket.ru/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/c246x328/1.webp`;
+};
+
+// Асинхронная функция получения URL изображения
+const getAllPhotoUrl = async (nomenclature) => {
+  let url = getPhotoUrl(nomenclature);
+  while (true) {
+    const wbResponse = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!wbResponse.ok && wbResponse.status === 404) {
+      const match = url.match(/\d+/);
+      let number = match ? Number(match[0]) : null;
+      number = number + 1;
+      if (number > 30) break;
+      url = getPhotoUrlWithoutUrl(nomenclature, number);
+      continue;
+    }
+    if (wbResponse.ok) break;
+  }
+  console.log('Resolved photo URL:', url);
+  return url;
+};
+
 // Основной компонент
 export default function AnalysisForm({ onReset, onFill }) {
   const [input, setInput] = useState('');
@@ -56,10 +93,52 @@ export default function AnalysisForm({ onReset, onFill }) {
   const [isMovedUp, setIsMovedUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [carouselItems, setCarouselItems] = useState([]);
+  const [photoUrls, setPhotoUrls] = useState([]);
   const [usedWords, setUsedWords] = useState([]);
   const [unusedWords, setUnusedWords] = useState([]);
   const inputRef = useRef(null);
   const requestRegex = /^.{20,300}$/;
+  const [currentlyTyping, setCurrentlyTyping] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isInputDisabled, setIsInputDisabled] = useState(false);
+  const [currentWords, setCurrentWords] = useState({ used: [], unused: [] });
+  const [mainData, setMainData] = useState(null);
+  const [isSearchingProducts, setIsSearchingProducts] = useState(false);
+  const [isRestoredTask, setIsRestoredTask] = useState(false);
+  const [currentTaskId, setCurrentTaskId] = useState(null);
+
+  // Форматирование сообщения об ошибке
+  const formatErrorMessage = (error) => {
+    if (!error) return 'Произошла неизвестная ошибка';
+    
+    let message = '';
+    if (typeof error === 'string') {
+      message = error;
+    } else if (error.message) {
+      message = error.message;
+    } else {
+      return 'Произошла неизвестная ошибка';
+    }
+    
+    // Удаляем undefined и null из сообщения
+    message = message.replace(/undefined|null/g, '');
+    // Удаляем двойные пробелы
+    message = message.replace(/\s+/g, ' ').trim();
+    // Делаем первую букву заглавной
+    return message.charAt(0).toUpperCase() + message.slice(1);
+  };
+
+  // Анимированное отображение сообщения об ошибке
+  const showError = async (errorMessage) => {
+    const formattedError = formatErrorMessage(errorMessage);
+    if (!formattedError) return;
+    
+    setError('');
+    for (let i = 0; i < formattedError.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 30));
+      setError(prev => prev + formattedError[i]);
+    }
+  };
 
   // Функция сброса всех состояний
   const resetForm = () => {
@@ -73,33 +152,67 @@ export default function AnalysisForm({ onReset, onFill }) {
     setCarouselItems([]);
     setUsedWords([]);
     setUnusedWords([]);
+    setCurrentWords({ used: [], unused: [] });
+    setMainData(null);
+    setIsInputDisabled(false);
+    setIsGenerating(false);
+    setIsSearchingProducts(false);
     if (inputRef.current) inputRef.current.value = '';
   };
 
   // Функция заполнения формы данными из API
   const fillForm = (data) => {
-    const mainId = fromUrlGetId(data.main.url); // Извлекаем ID из URL
+    const url = "https://www.wildberries.ru/catalog/"+data.main.id+"/detail.aspx";
+    const mainId = fromUrlGetId(url);
     if (!mainId) {
       setError('Некорректный URL в данных задачи');
       return;
     }
-    setInput(data.main.url); // Устанавливаем полный URL из main.url
+
+    setInput(url);
     setError('');
     setResults(['Результат анализа товара']);
     setDisplayedResults(['Результат анализа товара']);
     setIsOverlayVisible(true);
     setIsMovedUp(true);
     setIsLoading(false);
+    setIsRestoredTask(true); // Устанавливаем флаг восстановленной задачи
+    setCurrentTaskId(data.id); // Сохраняем id задачи
+    
+    // Устанавливаем основные данные товара
+    setMainData(data.main);
+    
+    // Устанавливаем данные о товарах
     setCarouselItems(data.products.map(product => ({
-      id: fromUrlGetId(product.url), // Извлекаем ID из URL продуктов
+      id: product.id,
+      root: product.root,
       name: product.name,
       brand: product.brand,
       price: product.price,
       reviewRating: product.reviewRating,
       description: product.description,
     })));
+
+    // Получаем URL фотографий для товаров
+    const fetchPhotos = async () => {
+      try {
+        const urls = await Promise.all(data.products.map(item => getAllPhotoUrl(item.id)));
+        setPhotoUrls(urls);
+      } catch (error) {
+        console.error('Error fetching photo URLs:', error);
+      }
+    };
+    fetchPhotos();
+
+    // Устанавливаем списки слов
     setUsedWords(data.usedWords || []);
     setUnusedWords(data.unusedWords || []);
+    setCurrentWords({
+      used: data.usedWords || [],
+      unused: data.unusedWords || []
+    });
+    
+    setIsInputDisabled(true);
   };
 
   // Передаем функции через пропсы
@@ -277,15 +390,42 @@ export default function AnalysisForm({ onReset, onFill }) {
     return response;
   };
 
+  const sendRequest = async (input) => {
+    const token = await TokenManager.getValidAccessToken();
+    if (!token) {
+      throw new Error('Ошибка авторизации');
+    }
+  
+    const response = await fetch(`http://127.0.0.1:8000/create/task/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        main: mainData,
+        products,
+        used_words: usedWords,
+        unused_words: unusedWords,
+      }),
+    });
+  
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Ошибка создания задачи');
+    }
+    return response;
+  };
+
   const handleAnalyze = async () => {
     if (!requestRegex.test(input)) {
-      setError('Вы не ввели корректный URL');
+      showError('Вы не ввели корректный URL');
       return;
     }
 
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      setError('Ошибка авторизации');
+      showError('Ошибка авторизации');
       return;
     }
 
@@ -294,30 +434,46 @@ export default function AnalysisForm({ onReset, onFill }) {
       setError('');
       const id = fromUrlGetId(input);
       if (!id) {
-        setError('Вы не ввели корректный URL');
+        showError('Некорректный URL товара');
         return;
       }
-      console.log('Extracted ID:', id);
 
       const mainData = await fetchMainProductData(id);
-      console.log('Main product data:', mainData);
+      setMainData(mainData);
 
       const words = await fetchWordsFromServer(id, token);
-      console.log('Words from server:', words);
       if (words.length === 0) {
         setError('Увы к сожалению вашего товара нет в списке пожалуйста ожидайте');
         return;
       }
 
-      const newResults = words.length === 0
-        ? ['Увы к сожалению вашего товара нет в списке пожалуйста ожидайте']
-        : ['Результат анализа товара'];
-      setResults(newResults);
-      setIsMovedUp(true);
-      setDisplayedResults(newResults.map(() => ''));
+      const usedWordsList = words.slice(0, 10);
+      const unusedWordsList = words.slice(10, 30);
+      
+      setCurrentWords({
+        used: usedWordsList,
+        unused: unusedWordsList
+      });
 
-      const firstTenWords = words.slice(0, 10);
-      const allWbProducts = await searchWbProducts(firstTenWords);
+      await updateProductsList(usedWordsList);
+
+      setUsedWords(usedWordsList);
+      setUnusedWords(unusedWordsList);
+      setIsInputDisabled(true);
+      setIsOverlayVisible(true);
+      setIsMovedUp(true);
+
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateProductsList = async (wordsToUse) => {
+    setIsSearchingProducts(true);
+    try {
+      const allWbProducts = await searchWbProducts(wordsToUse);
 
       const productFrequency = {};
       allWbProducts.forEach((product, index) => {
@@ -331,52 +487,133 @@ export default function AnalysisForm({ onReset, onFill }) {
       const sortedProducts = Object.values(productFrequency)
         .sort((a, b) => b.count !== a.count ? b.count - a.count : a.firstIndex - b.firstIndex)
         .slice(0, 10);
-      console.log('Top 10 products:', sortedProducts);
 
       const productsWithDescriptions = await fetchProductDescriptions(sortedProducts);
-      console.log('Products with descriptions:', productsWithDescriptions);
-
-      const usedWordsList = words.slice(0, 10);
-      const unusedWordsList = words.slice(10, 30);
-      const createTaskResponse = await createTaskOnServer(
-        mainData,
-        productsWithDescriptions,
-        usedWordsList,
-        unusedWordsList,
-        token
-      );
-      console.log('Task response:', createTaskResponse);
-
+      const urls = await Promise.all(productsWithDescriptions.map(item => getAllPhotoUrl(item.id)));
+      
+      setPhotoUrls(urls);
       setCarouselItems(productsWithDescriptions.map(product => ({
         id: product.id,
+        root: product.root,
         name: product.name,
         brand: product.brand,
         price: product.price,
         reviewRating: product.reviewRating,
         description: product.description,
       })));
-      setUsedWords(usedWordsList);
-      setUnusedWords(unusedWordsList);
-      setIsOverlayVisible(true);
     } catch (error) {
       setError(error.message);
+    } finally {
+      setIsSearchingProducts(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) throw new Error('Ошибка авторизации');
+
+      const createTaskResponse = await createTaskOnServer(
+        mainData,
+        carouselItems,
+        currentWords.used,
+        currentWords.unused,
+        token
+      );
+      
+      setResults(['Результат анализа товара']);
+      setDisplayedResults(['']);
+      setIsOverlayVisible(false);
+      
+    } catch (error) {
+      setError(error.message);
+      setIsGenerating(false); // Разблокируем настройки при ошибке
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (results.length > 0 && displayedResults.length > 0) {
-      results.forEach((result, index) => {
-        const chars = result.split('');
-        chars.forEach((char, charIndex) => {
-          setTimeout(() => {
-            setDisplayedResults(prev =>
-              prev.map((text, i) => (i === index ? text + char : text))
-            );
-          }, charIndex * 50 + index * 1000);
-        });
+  const handleRegenerate = async () => {
+    setIsGenerating(true);
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) throw new Error('Ошибка авторизации');
+
+      // Отправляем запрос на перегенерацию
+      console.log(currentTaskId)
+      const response = await fetch('http://127.0.0.1:8000/regenerate/task/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: currentTaskId,
+          main: mainData,
+          products: carouselItems,
+          used_words: currentWords.used,
+          unused_words: currentWords.unused,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Ошибка при перегенерации задачи');
+      }
+
+      setResults(['Результат перегенерации товара']);
+      setDisplayedResults(['']);
+      setIsOverlayVisible(false);
+      
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+      setIsGenerating(false);
+    }
+  };
+
+  const handleWordChange = async (newUsedWords, newUnusedWords) => {
+    setCurrentWords({
+      used: newUsedWords,
+      unused: newUnusedWords
+    });
+    await updateProductsList(newUsedWords);
+  };
+
+  useEffect(() => {
+    if (results.length > 0 && !currentlyTyping) {
+      setCurrentlyTyping(true);
+      const animateText = async () => {
+        for (let resultIndex = 0; resultIndex < results.length; resultIndex++) {
+          const result = results[resultIndex];
+          setDisplayedResults(prev => {
+            const newResults = [...prev];
+            newResults[resultIndex] = '';
+            return newResults;
+          });
+          
+          for (let charIndex = 0; charIndex < result.length; charIndex++) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+            setDisplayedResults(prev => {
+              const newResults = [...prev];
+              newResults[resultIndex] = result.slice(0, charIndex + 1);
+              return newResults;
+            });
+          }
+          
+          // Пауза между строками
+          if (resultIndex < results.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+        setCurrentlyTyping(false);
+      };
+      
+      animateText();
     }
   }, [results]);
 
@@ -398,6 +635,7 @@ export default function AnalysisForm({ onReset, onFill }) {
           className={`${styles.input} ${error ? styles.error : ''}`}
           variants={inputShake}
           animate={error ? 'shake' : undefined}
+          disabled={isInputDisabled}
         />
         <motion.div
           className={styles.errorMessage}
@@ -407,9 +645,17 @@ export default function AnalysisForm({ onReset, onFill }) {
         >
           {error}
         </motion.div>
-        <Button onClick={handleAnalyze} disabled={isLoading} isLoading={isLoading}>
+        <Button 
+          onClick={isInputDisabled ? (isRestoredTask ? handleRegenerate : handleGenerate) : handleAnalyze} 
+          disabled={isLoading} 
+          isLoading={isLoading}
+        >
           <div className={styles.buttonContent}>
-            <span>Анализ</span>
+            <span>
+              {isInputDisabled 
+                ? (isRestoredTask ? 'Перегенерировать' : 'Генерировать') 
+                : 'Анализ'}
+            </span>
             {isLoading && <div className={styles.loading}></div>}
           </div>
         </Button>
@@ -433,7 +679,17 @@ export default function AnalysisForm({ onReset, onFill }) {
         </AnimatePresence>
       </div>
       {isMovedUp && (
-        <Button className={styles.settingsBtn} onClick={() => setIsOverlayVisible(true)}>
+        <Button 
+          className={styles.settingsBtn} 
+          onClick={() => {
+            if (isGenerating) {
+              showError('Во время генерации нельзя менять настройки');
+              return;
+            }
+            setIsOverlayVisible(true);
+          }}
+          disabled={isGenerating}
+        >
           Настройки
         </Button>
       )}
@@ -441,8 +697,13 @@ export default function AnalysisForm({ onReset, onFill }) {
         <Overlay
           onClose={() => setIsOverlayVisible(false)}
           carouselItems={carouselItems}
-          usedWords={usedWords}
-          unusedWords={unusedWords}
+          photoUrls={photoUrls}
+          usedWords={currentWords.used}
+          unusedWords={currentWords.unused}
+          onWordChange={handleWordChange}
+          isGenerating={isGenerating}
+          isSearchingProducts={isSearchingProducts}
+          setIsSearchingProducts={setIsSearchingProducts}
         />
       )}
     </div>

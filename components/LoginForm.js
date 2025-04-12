@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import styles from '../styles/LoginForm.module.css';
 import Button from './Button';
+import { TokenManager } from '../utils/tokenManager';
 
 export default function LoginForm({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -14,12 +15,26 @@ export default function LoginForm({ onLoginSuccess }) {
 
   const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
   const passwordRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-  const typeText = (text, setter) => {
+
+  // Форматирование сообщения об ошибке
+  const formatErrorMessage = (error) => {
+    if (typeof error === 'string') {
+      return error.charAt(0).toUpperCase() + error.slice(1);
+    }
+    if (error && error.message) {
+      return error.message.charAt(0).toUpperCase() + error.message.slice(1);
+    }
+    return 'Произошла неизвестная ошибка';
+  };
+
+  // Анимированное отображение сообщения об ошибке
+  const typeText = (error, setter) => {
+    const formattedError = formatErrorMessage(error);
     let i = 0;
     setter('');
     const interval = setInterval(() => {
-      if (i < text.length) {
-        setter((prev) => prev + text[i]);
+      if (i < formattedError.length) {
+        setter(prev => prev + formattedError[i]);
         i++;
       } else {
         clearInterval(interval);
@@ -63,8 +78,7 @@ export default function LoginForm({ onLoginSuccess }) {
       if (!response.ok) throw new Error('Ошибка авторизации');
 
       const data = await response.json();
-      localStorage.setItem('accessToken', data.Ok.accessToken.token);
-      localStorage.setItem('refreshToken', data.Ok.refreshToken.token);
+      TokenManager.setTokens(data);
       onLoginSuccess();
     } catch (error) {
       typeText(error.message || 'Ошибка входа', setEmailError);
@@ -124,7 +138,7 @@ export default function LoginForm({ onLoginSuccess }) {
       >
         {passwordError}
       </motion.div>
-      <Button onClick={handleLogin} disabled={isLoading}>
+      <Button onClick={handleLogin} disabled={isLoading} isLoading={isLoading}>
         {isLoading ? <div className={styles.loading}></div> : 'Войти'}
       </Button>
     </div>

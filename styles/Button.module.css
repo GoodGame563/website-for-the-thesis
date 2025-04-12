@@ -13,7 +13,7 @@
   border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.3s ease;
-  width: 10rem;
+  width: 12rem;
   height: 3.5rem;
 }
 
@@ -51,7 +51,9 @@
 }
 
 .loading {
-  transform: scale(1.3); /* Увеличение кнопки при загрузке */
+  width: 3.5rem;
+  transform: scale(1.2);
+  transition: width 0.3s ease, transform 0.3s ease;
 }
 
 .btn:hover:not(.disabled) {
@@ -73,4 +75,45 @@
 @keyframes wave {
   from { width: 0; height: 0; opacity: 1; }
   to { width: 300px; height: 300px; opacity: 0; }
+}
+
+.buttonContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.buttonContent span {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.loading span {
+  opacity: 0;
+}
+
+.loader {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.loading .loader {
+  opacity: 1;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
