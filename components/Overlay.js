@@ -156,42 +156,99 @@ export default function Overlay({ onClose, carouselItems = [], photoUrls = [], u
   }, []);
 
   useEffect(() => {
-    const isUsedWordsChanged = JSON.stringify(usedWords.sort()) !== JSON.stringify(initialUsedWords.sort());
-    const isUnusedWordsChanged = JSON.stringify(unusedWords.sort()) !== JSON.stringify(initialUnusedWords.sort());
+    const arraysAreEqual = (arr1, arr2) => {
+      if (arr1.length !== arr2.length) return false;
+      return arr1.every((item, index) => item === arr2[index]);
+    };
+    
+    const isUsedWordsChanged = !arraysAreEqual(usedWords, initialUsedWords);
+    const isUnusedWordsChanged = !arraysAreEqual(unusedWords, initialUnusedWords);
     setIsChanged(isUsedWordsChanged || isUnusedWordsChanged);
   }, [usedWords, unusedWords, initialUsedWords, initialUnusedWords]);
 
   const overlayVariants = {
     hidden: { 
       opacity: 0,
+      y: '100%',
+      transition: {
+        type: "spring",
+        damping: 30,
+        stiffness: 300
+      }
     },
     visible: { 
       opacity: 1,
+      y: 0,
       transition: { 
-        duration: 0.2,
-        when: "beforeChildren",
-        staggerChildren: 0.1
+        type: "spring",
+        damping: 30,
+        stiffness: 300,
+        duration: 0.5,
+        staggerChildren: 0.05
       }
     },
     exit: { 
       opacity: 0,
+      y: '100%',
       transition: { 
-        duration: 0.2,
+        type: "spring",
+        damping: 30,
+        stiffness: 300,
+        duration: 0.5,
         when: "afterChildren"
       }
     }
   };
 
   const containerVariants = {
-    hidden: { opacity: 0 },
+    hidden: { 
+      opacity: 0,
+      y: 50,
+      transition: {
+        type: "spring",
+        damping: 25,
+        stiffness: 200
+      }
+    },
     visible: { 
       opacity: 1,
+      y: 0,
       transition: {
-        duration: 0.2
+        type: "spring",
+        damping: 25,
+        stiffness: 200
       }
     },
     exit: { 
       opacity: 0,
+      y: 50,
+      transition: {
+        type: "spring",
+        damping: 25,
+        stiffness: 200
+      }
+    }
+  };
+
+  const carouselVariants = {
+    hidden: { 
+      opacity: 0,
+      y: 20,
+      transition: {
+        duration: 0.2
+      }
+    },
+    visible: { 
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.3,
+        delay: 0.1
+      }
+    },
+    exit: { 
+      opacity: 0,
+      y: 20,
       transition: {
         duration: 0.2
       }
@@ -259,7 +316,7 @@ export default function Overlay({ onClose, carouselItems = [], photoUrls = [], u
 
       {/* Notifications should be rendered first in the DOM */}
       <div className={styles.notificationList}>
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
           {notifications.map((notif) => (
             <motion.div
               key={notif.id}
@@ -298,10 +355,10 @@ export default function Overlay({ onClose, carouselItems = [], photoUrls = [], u
           <motion.div
             key={isSearchingProducts ? 'loading' : 'carousel'}
             className={styles.carouselContainer}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.5 }}
+            variants={carouselVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
           >
             {isSearchingProducts ? (
               <LoadingAnimation />
@@ -315,9 +372,7 @@ export default function Overlay({ onClose, carouselItems = [], photoUrls = [], u
 
         <motion.div 
           className={styles.keywordContainer}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          variants={containerVariants}
         >
           <h3>Ключевые слова</h3>
           <div className={`${styles.wordContainer} ${styles.green}`}>
@@ -330,11 +385,13 @@ export default function Overlay({ onClose, carouselItems = [], photoUrls = [], u
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
+                  layout
                   transition={{ 
                     type: "spring",
-                    stiffness: 500,
-                    damping: 30,
-                    mass: 1
+                    stiffness: 300,
+                    damping: 25,
+                    mass: 0.5,
+                    duration: 0.3
                   }}
                 >
                   {word}
@@ -355,11 +412,13 @@ export default function Overlay({ onClose, carouselItems = [], photoUrls = [], u
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
+                  layout
                   transition={{ 
                     type: "spring",
-                    stiffness: 500,
-                    damping: 30,
-                    mass: 1
+                    stiffness: 300,
+                    damping: 25,
+                    mass: 0.5,
+                    duration: 0.3
                   }}
                 >
                   {word}
@@ -374,9 +433,10 @@ export default function Overlay({ onClose, carouselItems = [], photoUrls = [], u
           {isChanged && (
             <motion.div
               className={styles.saveButtonContainer}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
               <Button
                 onClick={handleSaveChanges}

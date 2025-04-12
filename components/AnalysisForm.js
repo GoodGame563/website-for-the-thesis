@@ -447,18 +447,20 @@ export default function AnalysisForm({ onReset, onFill }) {
         return;
       }
 
+      // Take first 10 words as used and rest as unused, maintaining order
       const usedWordsList = words.slice(0, 10);
       const unusedWordsList = words.slice(10, 30);
-      
+
       setCurrentWords({
-        used: usedWordsList,
-        unused: unusedWordsList
+        used: [...usedWordsList],
+        unused: [...unusedWordsList]
       });
 
       await updateProductsList(usedWordsList);
 
       setUsedWords(usedWordsList);
       setUnusedWords(unusedWordsList);
+
       setIsInputDisabled(true);
       setIsOverlayVisible(true);
       setIsMovedUp(true);
@@ -578,8 +580,8 @@ export default function AnalysisForm({ onReset, onFill }) {
 
   const handleWordChange = async (newUsedWords, newUnusedWords) => {
     setCurrentWords({
-      used: newUsedWords,
-      unused: newUnusedWords
+      used: [...newUsedWords], // Use spread to maintain array order
+      unused: [...newUnusedWords]
     });
     await updateProductsList(newUsedWords);
   };

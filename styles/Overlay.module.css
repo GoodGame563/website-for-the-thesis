@@ -11,6 +11,11 @@
   align-items: flex-start;
   z-index: 1000;
   overflow: hidden;
+  transform-origin: bottom;
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 .container {
@@ -25,6 +30,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  transform-origin: bottom;
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .container::-webkit-scrollbar {
@@ -112,6 +121,8 @@
   box-sizing: border-box;
   contain: content;
   will-change: contents;
+  position: relative;
+  perspective: 1000px;
 }
 
 .keywordItem {
@@ -126,6 +137,8 @@
   will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .keywordItem::after {
@@ -343,7 +356,6 @@
   align-items: center;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  backdrop-filter: blur(5px);
 }
 
 .loader {
