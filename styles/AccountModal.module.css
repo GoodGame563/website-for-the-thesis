@@ -1,0 +1,169 @@
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 1000;
+}
+
+.modal {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #1a1a1a;
+    color: white;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    z-index: 1001;
+    max-height: 70vh;
+    min-height: min-content;
+}
+
+.content {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.userName {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: #fff;
+}
+
+.sessionsContainer {
+    margin: 1rem 0;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.sessionsContainer h2 {
+    margin-bottom: 1rem;
+    color: #fff;
+    font-size: 1.5rem;
+    position: sticky;
+    top: 0;
+    background: #1a1a1a;
+    padding: 0.5rem 0;
+    z-index: 2;
+}
+
+.sessionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+    max-height: calc(70vh - 200px); /* Оставляем место для заголовка и кнопки выхода */
+    padding: 1rem 1rem 1rem 0.5rem; /* Увеличиваем отступы для предотвращения обрезания */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    /* Добавляем отступ для масштабирования */
+    margin: 0 0.5rem;
+}
+
+.sessionsList::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sessionsList::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sessionsList::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.sessionItem {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    position: relative;
+    /* Добавляем transform-origin для корректного масштабирования */
+    transform-origin: center center;
+    /* Добавляем отступ для предотвращения обрезания при масштабировании */
+    margin: 0.25rem 0.5rem;
+    will-change: transform;
+}
+
+.sessionInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    /* Добавляем максимальную ширину для предотвращения переполнения */
+    max-width: 100%;
+}
+
+.sessionDetails {
+    flex-grow: 1;
+}
+
+.lastAction {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.lastActionTime {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.deviceInfo {
+    margin: 0.5rem 0 0 0;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+}
+
+.deleteButton {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: #ff4444;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: opacity 0.2s, background-color 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sessionItem:hover .deleteButton {
+    opacity: 1;
+}
+
+.deleteButton:hover {
+    background: rgba(255, 68, 68, 0.1);
+}
+
+.logoutButton {
+    width: 100%;
+    padding: 1rem;
+    margin-top: 2rem;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+    position: sticky;
+    bottom: 0;
+}
+
+.logoutButton:hover {
+    background-color: #c82333;
+}

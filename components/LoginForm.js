@@ -63,7 +63,7 @@ export default function LoginForm({ onLoginSuccess }) {
     if (!isEmailValid || !isPasswordValid) return;
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/authorization', {
+      const response = await fetch('http://localhost:8000/api/v1/authorization', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

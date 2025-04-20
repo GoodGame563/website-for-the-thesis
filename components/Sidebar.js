@@ -3,8 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import styles from '../styles/Sidebar.module.css';
 import Button from './Button';
 import { TokenManager } from '../utils/tokenManager';
+import { useRouter } from 'next/router';
+import AccountModal from './AccountModal';
 
 export default function Sidebar({ onNewRequest, onTaskSelect }) {
+  const router = useRouter();
   const [isActive, setIsActive] = useState(false);
   const [todayTasks, setTodayTasks] = useState([]);
   const [otherTasks, setOtherTasks] = useState([]);
@@ -13,6 +16,7 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
   const [editedName, setEditedName] = useState('');
   const [originalNames, setOriginalNames] = useState({});
   const [notifications, setNotifications] = useState([]);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const sidebarRef = useRef(null);
   const taskNameRefs = useRef({});
 
@@ -45,7 +49,7 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
           throw new Error('Ошибка авторизации');
         }
 
-        const response = await fetch('http://127.0.0.1:8000/get/history', {
+        const response = await fetch('http://127.0.0.1:8000/api/v1/get/history', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -110,7 +114,7 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
         throw new Error('Ошибка авторизации');
       }
 
-      const response = await fetch(`http://127.0.0.1:8000/get/task`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/v1/get/task`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -224,7 +228,7 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
         throw new Error('Ошибка авторизации');
       }
 
-      const response = await fetch(`http://127.0.0.1:8000/edit/task`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/v1/edit/task`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -326,6 +330,11 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
     </motion.div>
   );
 
+  const handleAccountClick = () => {
+    setIsAccountModalOpen(true);
+    setIsActive(false);
+  };
+
   return (
     <>
       <div className={styles.notificationList}>
@@ -417,9 +426,19 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
                 )}
               </AnimatePresence>
             </div>
+            
+            <div className={styles.accountButtonContainer}>
+              <Button onClick={handleAccountClick} className={styles.accountButton}>
+                Аккаунт
+              </Button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
+      <AccountModal 
+        isOpen={isAccountModalOpen}
+        onClose={() => setIsAccountModalOpen(false)}
+      />
     </>
   );
 }

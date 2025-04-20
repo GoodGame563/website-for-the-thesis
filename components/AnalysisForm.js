@@ -272,7 +272,7 @@ export default function AnalysisForm({ onReset, onFill }) {
 
   // Получение слов с сервера
   const fetchWordsFromServer = async (productId, token) => {
-    const response = await fetch(`http://127.0.0.1:8000/get/words/${encodeURIComponent(productId)}`, {
+    const response = await fetch(`http://127.0.0.1:8000/api/v1/get/words/${encodeURIComponent(productId)}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -281,11 +281,19 @@ export default function AnalysisForm({ onReset, onFill }) {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Ошибка авторизации. Пожалуйста, войдите снова.');
+      }
       const errorData = await response.json();
       throw new Error(errorData.message || 'Ошибка сервера при получении слов');
     }
 
-    return await response.json() || [];
+    const data = await response.json();
+    if (!data) {
+      throw new Error('Пустой ответ от сервера');
+    }
+
+    return data;
   };
 
   // Поиск продуктов на Wildberries
@@ -369,7 +377,7 @@ export default function AnalysisForm({ onReset, onFill }) {
 
   // Создание задачи на сервере
   const createTaskOnServer = async (mainData, products, usedWords, unusedWords, token) => {
-    const response = await fetch(`http://127.0.0.1:8000/create/task/`, {
+    const response = await fetch(`http://127.0.0.1:8000/api/v1/create/task/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -396,7 +404,7 @@ export default function AnalysisForm({ onReset, onFill }) {
       throw new Error('Ошибка авторизации');
     }
   
-    const response = await fetch(`http://127.0.0.1:8000/create/task/`, {
+    const response = await fetch(`http://127.0.0.1:8000/api/v1/create/task/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -546,7 +554,7 @@ export default function AnalysisForm({ onReset, onFill }) {
 
       // Отправляем запрос на перегенерацию
       console.log(currentTaskId)
-      const response = await fetch('http://127.0.0.1:8000/regenerate/task/', {
+      const response = await fetch('http://127.0.0.1:8000/api/v1/regenerate/task/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

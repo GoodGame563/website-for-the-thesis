@@ -11,10 +11,16 @@ export default function RequestsPage() {
   const fillFormRef = useRef(null);
 
   useEffect(() => {
+    if (!TokenManager.hasValidTokens()) {
+      router.replace('/login');
+      return;
+    }
+
     const checkAuth = async () => {
       const token = await TokenManager.getValidAccessToken();
       if (!token) {
-        router.push('/login');
+        TokenManager.clearTokens();
+        router.replace('/login');
       }
     };
     checkAuth();
