@@ -25,11 +25,17 @@
 
 .content {
     padding: 2rem;
-    max-width: 800px;
     margin: 0 auto;
     height: 100%;
     display: flex;
     flex-direction: column;
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
 }
 
 .userName {
@@ -37,6 +43,23 @@
     font-size: 2rem;
     margin-bottom: 2rem;
     color: #fff;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+    color: #333;
+}
+
+.userEmail {
+    font-size: 24px;
+    color: #666;
+    margin: 0;
+    position: relative;
+}
+
+.userEmail::before {
+    content: '/';
+    margin-right: 8px;
+    color: #999;
 }
 
 .sessionsContainer {
@@ -154,7 +177,7 @@
     width: 100%;
     padding: 1rem;
     margin-top: 2rem;
-    background-color: #dc3545;
+    /* background-color: #dc3545; */
     color: white;
     border: none;
     border-radius: 8px;

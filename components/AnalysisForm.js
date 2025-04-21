@@ -4,6 +4,7 @@ import styles from '../styles/AnalysisForm.module.css';
 import Button from './Button';
 import Overlay from './Overlay';
 import { TokenManager } from '../utils/tokenManager';
+import { handleFetchError } from '../utils/fetchErrorHandler';
 
 // Извлечение ID из URL
 const fromUrlGetId = (url) => {
@@ -53,12 +54,12 @@ const getCardUrlWithoutUrl = (nomenclature, id) => {
 // Генерация URL без явного basket-номера
 const getPhotoUrl = (nomenclature) => {
   const domain = getUrl(Math.floor(nomenclature / 100000));
-  return `https://${domain}/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/c246x328/1.webp`;
+  return `https://${domain}/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/big/1.webp`;
 };
 
 // Генерация URL с явным basket-номером
 const getPhotoUrlWithoutUrl = (nomenclature, id) => {
-  return `https://basket-${id}.wbbasket.ru/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/c246x328/1.webp`;
+  return `https://basket-${id}.wbbasket.ru/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/big/1.webp`;
 };
 
 // Асинхронная функция получения URL изображения
@@ -272,58 +273,66 @@ export default function AnalysisForm({ onReset, onFill }) {
 
   // Получение слов с сервера
   const fetchWordsFromServer = async (productId, token) => {
-    const response = await fetch(`http://127.0.0.1:8000/api/v1/get/words/${encodeURIComponent(productId)}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Ошибка авторизации. Пожалуйста, войдите снова.');
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/v1/get/words/${encodeURIComponent(productId)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Ошибка авторизации. Пожалуйста, войдите снова.');
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Ошибка сервера при получении слов');
       }
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Ошибка сервера при получении слов');
+  
+      const data = await response.json();
+      if (!data) {
+        throw new Error('Пустой ответ от сервера');
+      }
+  
+      return data;
+    } catch (error) {
+      throw new Error(handleFetchError(error));
     }
-
-    const data = await response.json();
-    if (!data) {
-      throw new Error('Пустой ответ от сервера');
-    }
-
-    return data;
   };
 
   // Поиск продуктов на Wildberries
   const searchWbProducts = async (queries) => {
-    const wbSearchPromises = queries.map(async (query) => {
-      const url = `https://search.wb.ru/exactmatch/ru/common/v9/search?ab_daily_autotest=test_group2&appType=1&curr=rub&dest=-2133466&lang=ru&resultset=catalog&sort=popular&spp=30&suppressSpellcheck=false&query=${encodeURIComponent(query)}`;
-      const wbResponse = await fetch(url, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+    try {
+      const wbSearchPromises = queries.map(async (query) => {
+        const url = `https://search.wb.ru/exactmatch/ru/common/v9/search?ab_daily_autotest=test_group2&appType=1&curr=rub&dest=-2133466&lang=ru&resultset=catalog&sort=popular&spp=30&suppressSpellcheck=false&query=${encodeURIComponent(query)}`;
+        const wbResponse = await fetch(url, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+  
+        if (!wbResponse.ok) {
+          throw new Error(`Ошибка Wildberries API для ${query}: ${wbResponse.status}`);
+        }
+  
+        const wbData = await wbResponse.json();
+        const wbProducts = wbData.data?.products || [];
+        return wbProducts.map(product => ({
+          id: product.id,
+          root: product.root,
+          reviewRating: product.reviewRating,
+          name: product.name,
+          brand: product.brand,
+          brandId: product.brandId,
+          price: product.sizes[0]?.price.total || 0,
+        }));
       });
-
-      if (!wbResponse.ok) {
-        throw new Error(`Ошибка Wildberries API для ${query}: ${wbResponse.status}`);
-      }
-
-      const wbData = await wbResponse.json();
-      const wbProducts = wbData.data?.products || [];
-      return wbProducts.map(product => ({
-        id: product.id,
-        root: product.root,
-        reviewRating: product.reviewRating,
-        name: product.name,
-        brand: product.brand,
-        brandId: product.brandId,
-        price: product.sizes[0]?.price.total || 0,
-      }));
-    });
-
-    const wbResults = await Promise.all(wbSearchPromises);
-    return wbResults.flat();
+  
+      const wbResults = await Promise.all(wbSearchPromises);
+      return wbResults.flat();
+    } catch (error) {
+      throw new Error(handleFetchError(error));
+    }
   };
 
   // Добавление описаний к продуктам
@@ -377,25 +386,29 @@ export default function AnalysisForm({ onReset, onFill }) {
 
   // Создание задачи на сервере
   const createTaskOnServer = async (mainData, products, usedWords, unusedWords, token) => {
-    const response = await fetch(`http://127.0.0.1:8000/api/v1/create/task/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        main: mainData,
-        products,
-        used_words: usedWords,
-        unused_words: unusedWords,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Ошибка создания задачи');
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/v1/create/task/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          main: mainData,
+          products,
+          used_words: usedWords,
+          unused_words: unusedWords,
+        }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Ошибка создания задачи');
+      }
+      return response;
+    } catch (error) {
+      throw new Error(handleFetchError(error));
     }
-    return response;
   };
 
   const sendRequest = async (input) => {

@@ -16,10 +16,31 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
 .userName {
-    text-align: center;
-    font-size: 2rem;
-    margin-bottom: 2rem;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+    color: #333;
+}
+
+.userEmail {
+    font-size: 24px;
+    color: #666;
+    margin: 0;
+    position: relative;
+}
+
+.userEmail::before {
+    content: '/';
+    margin-right: 8px;
+    color: #999;
 }
 
 .logoutButton {

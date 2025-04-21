@@ -7,6 +7,7 @@ import { TokenManager } from '../utils/tokenManager';
 export default function Account() {
     const [userData, setUserData] = useState({
         name: '',
+        email: '',
         sessions: []
     });
     const router = useRouter();
@@ -17,36 +18,60 @@ export default function Account() {
             return;
         }
 
-        const checkAuth = async () => {
-            const token = await TokenManager.getValidAccessToken();
-            if (!token) {
-                TokenManager.clearTokens();
-                router.replace('/login');
+        const fetchUserData = async () => {
+            try {
+                const token = await TokenManager.getValidAccessToken();
+                if (!token) {
+                    TokenManager.clearTokens();
+                    router.replace('/login');
+                    return;
+                }
+
+                const response = await fetch('http://localhost:8000/api/v1/get/account', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch account data: ${response.status}`);
+                }
+
+                const data = await response.json();
+                setUserData(data);
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                // Handle error appropriately
             }
         };
-        checkAuth();
 
-        // Here you would fetch user data from your backend
-        // This is a placeholder
-        const mockUserData = {
-            name: 'John Doe',
-            sessions: [
-                { id: 1, date: '2025-04-19', device: 'Chrome Windows' },
-                { id: 2, date: '2025-04-18', device: 'Firefox Windows' }
-            ]
-        };
-        setUserData(mockUserData);
+        fetchUserData();
     }, [router]);
 
     const handleLogout = () => {
-        // Add logout logic here
+        TokenManager.clearTokens();
         router.push('/login');
+    };
+
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     };
 
     return (
         <div className={styles.container}>
             <div className={styles.content}>
-                <h1 className={styles.userName}>{userData.name}</h1>
+                <div className={styles.userInfo}>
+                    <h1 className={styles.userName}>{userData.name}</h1>
+                    <p className={styles.userEmail}>{userData.email}</p>
+                </div>
                 
                 <Button onClick={handleLogout} className={styles.logoutButton}>
                     Выйти из аккаунта
@@ -57,8 +82,8 @@ export default function Account() {
                     <div className={styles.sessionsList}>
                         {userData.sessions.map(session => (
                             <div key={session.id} className={styles.sessionItem}>
-                                <p>Дата: {session.date}</p>
-                                <p>Устройство: {session.device}</p>
+                                <p>Браузер: {session.browser || 'Неизвестно'}</p>
+                                <p>Последняя активность: {formatDate(session.lastActivity)}</p>
                             </div>
                         ))}
                     </div>

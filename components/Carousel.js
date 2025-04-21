@@ -25,9 +25,11 @@ const ProductCard = memo(({ item, index }) => {
               src={item.image}
               alt={item.title}
               fill
-              sizes="(max-width: 768px) 90vw, (max-width: 1200px) 30vw"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              quality={95}
+              priority={index < 3}
+              loading={index < 3 ? 'eager' : 'lazy'}
               className={styles.productImage}
-              priority={index === 0}
             />
           )}
         </div>
@@ -38,7 +40,10 @@ const ProductCard = memo(({ item, index }) => {
             {item.rating}
           </div>
           <div className={styles.price}>{item.price}</div>
-          <Button className={styles.detailsButton}>
+          <Button 
+            className={styles.detailsButton}
+            onClick={() => window.open(item.url, '_blank')}
+          >
             Подробнее
           </Button>
         </div>

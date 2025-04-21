@@ -24,18 +24,21 @@ const getUrl = (nomenclature) => {
   if (2190 <= nomenclature && nomenclature <= 2405) return "basket-15.wbbasket.ru";
   if (2406 <= nomenclature && nomenclature <= 2621) return "basket-16.wbbasket.ru";
   if (2622 <= nomenclature && nomenclature <= 2837) return "basket-17.wbbasket.ru";
-  return "basket-18.wbbasket.ru";
+  if (2838 <= nomenclature && nomenclature <= 3053) return "basket-18.wbbasket.ru";
+  if (3054 <= nomenclature && nomenclature <= 3269) return "basket-19.wbbasket.ru";
+  if (3270 <= nomenclature && nomenclature <= 3485) return "basket-20.wbbasket.ru";
+  return "basket-21.wbbasket.ru";
 };
 
 // Генерация URL без явного basket-номера
 const getPhotoUrl = (nomenclature) => {
   const domain = getUrl(Math.floor(nomenclature / 100000));
-  return `https://${domain}/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/c246x328/1.webp`;
+  return `https://${domain}/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/big/1.webp`;
 };
 
 // Генерация URL с явным basket-номером
 const getPhotoUrlWithoutUrl = (nomenclature, id) => {
-  return `https://basket-${id}.wbbasket.ru/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/c246x328/1.webp`;
+  return `https://basket-${id}.wbbasket.ru/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/big/1.webp`;
 };
 
 // Асинхронная функция получения URL изображения
@@ -105,6 +108,7 @@ export default function Overlay({ onClose, carouselItems = [], photoUrls = [], u
       title: item.name,
       rating: item.reviewRating ? `${item.reviewRating.toFixed(1)}/5` : 'Нет рейтинга',
       price: item.price ? `${(item.price / 100).toFixed(2)} ₽` : 'Нет цены',
+      url: `https://www.wildberries.ru/catalog/${item.id}/detail.aspx`
     })),
     [carouselItems, photoUrls]
   );

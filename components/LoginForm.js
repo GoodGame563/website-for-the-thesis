@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import styles from '../styles/LoginForm.module.css';
 import Button from './Button';
 import { TokenManager } from '../utils/tokenManager';
+import { handleFetchError } from '../utils/fetchErrorHandler';
 
 export default function LoginForm({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -14,37 +15,49 @@ export default function LoginForm({ onLoginSuccess }) {
   const passwordInputRef = useRef(null);
 
   const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-  const passwordRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
 
-  // Форматирование сообщения об ошибке
+  // Словарь для перевода стандартных ошибок (ключи в нижнем регистре)
+  const errorMessages = {
+    'failed to fetch': 'Ошибка подключения к серверу. Пожалуйста, проверьте своё подключение к интернету.',
+    'network error': 'Ошибка сети. Пожалуйста, проверьте подключение к интернету.',
+    'authentication failed': 'Ошибка аутентификации. Проверьте правильность введенных данных.',
+    'invalid credentials': 'Неверные учетные данные. Проверьте email и пароль.',
+    'user not found': 'Пользователь не найден.',
+    'invalid email format': 'Неверный формат email адреса.',
+    'invalid password': 'Неверный пароль.',
+    'server error': 'Ошибка сервера. Попробуйте позже.',
+    'ошибка авторизации': 'Ошибка авторизации. Проверьте правильность введенных данных.',
+    'пожалуйста, введите корректный email':'Пожалуйста, введите корректный email'
+  };
+
   const formatErrorMessage = (error) => {
+    if (!error) return 'Произошла неизвестная ошибка';
+    
     if (typeof error === 'string') {
-      return error.charAt(0).toUpperCase() + error.slice(1);
+      const errorKey = error.toLowerCase();
+      return errorMessages[errorKey] || error;
     }
-    if (error && error.message) {
-      return error.message.charAt(0).toUpperCase() + error.message.slice(1);
+    
+    if (error.message) { 
+      const errorKey = error.message.toLowerCase();
+      return errorMessages[errorKey] || error.message;
     }
+
     return 'Произошла неизвестная ошибка';
   };
 
-  // Анимированное отображение сообщения об ошибке
-  const typeText = (error, setter) => {
+  const showError = (error, setter) => {
     const formattedError = formatErrorMessage(error);
-    let i = 0;
-    setter('');
-    const interval = setInterval(() => {
-      if (i < formattedError.length) {
-        setter(prev => prev + formattedError[i]);
-        i++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 50);
+    setter(formattedError);
   };
 
   const validateInput = (value, regex, errorSetter, errorMessage) => {
+    if (!value.trim()) {
+      showError(errorMessage.toLowerCase(), errorSetter);
+      return false;
+    }
     if (!regex.test(value)) {
-      typeText(errorMessage, errorSetter);
+      showError(errorMessage.toLowerCase(), errorSetter);
       return false;
     }
     errorSetter('');
@@ -52,15 +65,24 @@ export default function LoginForm({ onLoginSuccess }) {
   };
 
   const handleLogin = async () => {
+    // Очищаем предыдущие ошибки
+    setEmailError('');
+    setPasswordError('');
+
     const isEmailValid = validateInput(
       email,
       emailRegex,
       setEmailError,
-      '  Пожалуйста, введите корректный email.  '
+      'Пожалуйста, введите корректный email'
     );
-    const isPasswordValid = true;
 
-    if (!isEmailValid || !isPasswordValid) return;
+    if (!password.trim()) {
+      showError('Пожалуйста, введите пароль', setPasswordError);
+      return;
+    }
+
+    if (!isEmailValid) return;
+    
     setIsLoading(true);
     try {
       const response = await fetch('http://localhost:8000/api/v1/authorization', {
@@ -75,13 +97,17 @@ export default function LoginForm({ onLoginSuccess }) {
         }),
       });
 
-      if (!response.ok) throw new Error('Ошибка авторизации');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'ошибка авторизации');
+      }
 
       const data = await response.json();
       TokenManager.setTokens(data);
       onLoginSuccess();
     } catch (error) {
-      typeText(error.message || 'Ошибка входа', setEmailError);
+      const errorMessage = handleFetchError(error);
+      showError(errorMessage.toLowerCase(), setEmailError);
     } finally {
       setIsLoading(false);
     }

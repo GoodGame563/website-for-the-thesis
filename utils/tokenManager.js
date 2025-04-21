@@ -1,3 +1,5 @@
+import { handleFetchError } from './fetchErrorHandler';
+
 export class TokenManager {
   static getTokenTimestamp() {
     return localStorage.getItem('tokenTimestamp');
@@ -73,7 +75,7 @@ export class TokenManager {
       console.log('Tokens successfully refreshed');
       return true;
     } catch (error) {
-      console.error('Error refreshing tokens:', error);
+      console.error('Error refreshing tokens:', handleFetchError(error));
       return false;
     }
   }

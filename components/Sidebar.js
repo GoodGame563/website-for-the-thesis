@@ -5,6 +5,7 @@ import Button from './Button';
 import { TokenManager } from '../utils/tokenManager';
 import { useRouter } from 'next/router';
 import AccountModal from './AccountModal';
+import { handleFetchError } from '../utils/fetchErrorHandler';
 
 export default function Sidebar({ onNewRequest, onTaskSelect }) {
   const router = useRouter();
@@ -94,6 +95,7 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
         setOtherTasks(otherTasksList);
       } catch (error) {
         console.error('Error fetching tasks:', error);
+        addNotification(handleFetchError(error));
       } finally {
         setIsLoading(false);
       }
@@ -145,7 +147,7 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
     } catch (error) {
       console.error('Error fetching task data:', error);
       // Добавляем уведомление об ошибке
-      addNotification('Ошибка при получении данных задачи');
+      addNotification(handleFetchError(error));
     } finally {
       setIsLoading(false);
     }
