@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import styles from '../styles/Carousel.module.css';
 import Button from './Button';
+import { handleFetchError } from '../utils/fetchErrorHandler';
 
-const ProductCard = memo(({ item, index }) => {
+const ProductCard = memo(({ item, index, handleImageLoad, handleImageError, loadedImages }) => {
   return (
     <motion.div
       className={styles.verticalItem}
@@ -30,6 +31,9 @@ const ProductCard = memo(({ item, index }) => {
               priority={index < 3}
               loading={index < 3 ? 'eager' : 'lazy'}
               className={styles.productImage}
+              onLoad={() => handleImageLoad(index)}
+              onError={() => handleImageError(index, item)}
+              style={{ opacity: loadedImages.has(index) ? 1 : 0 }}
             />
           )}
         </div>
@@ -56,6 +60,7 @@ ProductCard.displayName = 'ProductCard';
 
 export default function Carousel({ items }) {
   const [currentItems, setCurrentItems] = useState([]);
+  const [loadedImages, setLoadedImages] = useState(new Set());
   const carouselRef = useRef(null);
 
   useEffect(() => {
@@ -72,6 +77,28 @@ export default function Carousel({ items }) {
       left: newPosition,
       behavior: 'smooth'
     });
+  };
+
+  const handleImageLoad = (index) => {
+    setLoadedImages(prev => new Set([...prev, index]));
+  };
+
+  const handleImageError = async (index, item, retryCount = 0) => {
+    if (retryCount >= 3) return; // Max 3 retries
+
+    try {
+      const response = await fetch(item.image);
+      if (!response.ok) {
+        const error = new Error('Failed to load image');
+        error.status = response.status;
+        throw error;
+      }
+      
+      handleImageLoad(index);
+    } catch (error) {
+      console.error('Error loading image:', error);
+      await handleFetchError(error, () => handleImageError(index, item, retryCount + 1));
+    }
   };
 
   return (
@@ -93,6 +120,9 @@ export default function Carousel({ items }) {
               key={`${item.title}-${index}`}
               item={item}
               index={index}
+              handleImageLoad={handleImageLoad}
+              handleImageError={handleImageError}
+              loadedImages={loadedImages}
             />
           ))}
         </AnimatePresence>

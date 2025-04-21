@@ -4,6 +4,7 @@ import styles from '../styles/AccountModal.module.css';
 import Button from './Button';
 import { useRouter } from 'next/router';
 import { TokenManager } from '../utils/tokenManager';
+import { handleFetchError } from '../utils/fetchErrorHandler';
 
 export default function AccountModal({ isOpen, onClose }) {
     const [userData, setUserData] = useState({
@@ -32,13 +33,16 @@ export default function AccountModal({ isOpen, onClose }) {
                     });
 
                     if (!response.ok) {
-                        throw new Error(`Failed to fetch account data: ${response.status}`);
+                        const error = new Error('Failed to fetch account data');
+                        error.status = response.status;
+                        throw error;
                     }
 
                     const data = await response.json();
                     setUserData(data);
                 } catch (error) {
                     console.error('Error fetching user data:', error);
+                    await handleFetchError(error, () => fetchUserData());
                 }
             };
 
@@ -72,7 +76,9 @@ export default function AccountModal({ isOpen, onClose }) {
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to delete session: ${response.status}`);
+                const error = new Error('Failed to delete session');
+                error.status = response.status;
+                throw error;
             }
 
             setUserData(prev => ({
@@ -81,6 +87,7 @@ export default function AccountModal({ isOpen, onClose }) {
             }));
         } catch (error) {
             console.error('Error deleting session:', error);
+            await handleFetchError(error, () => handleDeleteSession(sessionId, e));
         }
     };
 

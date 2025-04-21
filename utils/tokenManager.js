@@ -53,29 +53,48 @@ export class TokenManager {
         return false;
       }
 
-      const response = await fetch('http://localhost:8000/api/v1/tokens/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          refreshToken: refreshToken,
-          browser: navigator.userAgent,
-          device: navigator.platform,
-          os: navigator.oscpu || 'Unknown OS',
-        })
-      });
+      const makeRefreshRequest = async () => {
+        const response = await fetch('http://127.0.0.1:8000/api/v1/refresh', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            refreshToken: refreshToken,
+            browser: navigator.userAgent,
+            device: navigator.platform,
+            os: navigator.oscpu || 'Unknown OS',
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error(`Token refresh failed with status ${response.status}`);
-      }
+        if (response.status === 404) {
+          this.clearTokens();
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('loginError', 'Ваша сессия недействительна');
+            window.location.href = '/login';
+          }
+          return false;
+        }
 
-      const data = await response.json();
+        if (!response.ok) {
+          const error = new Error(`Token refresh failed with status ${response.status}`);
+          error.status = response.status;
+          throw error;
+        }
+
+        const data = await response.json();
+        return data;
+      };
+
+      const data = await makeRefreshRequest();
+      if (!data) return false;
+
       this.setTokens(data);
       console.log('Tokens successfully refreshed');
       return true;
     } catch (error) {
-      console.error('Error refreshing tokens:', handleFetchError(error));
+      console.error('Error refreshing tokens:', error);
+      await handleFetchError(error);
       return false;
     }
   }

@@ -4,6 +4,7 @@ import styles from '../styles/Overlay.module.css';
 import Button from './Button';
 import Carousel from './Carousel';
 import ConfirmationModal from './ConfirmationModal';
+import { handleFetchError } from '../utils/fetchErrorHandler';
 
 // Определение домена Wildberries
 const getUrl = (nomenclature) => {
@@ -271,6 +272,7 @@ export default function Overlay({ onClose, carouselItems = [], photoUrls = [], u
       addNotification('Изменения сохранены успешно');
     } catch (error) {
       addNotification('Ошибка при сохранении изменений');
+      await handleFetchError(error, handleSaveChanges);
     }
   }, [usedWords, unusedWords, onWordChange, isGenerating, addNotification]);
 

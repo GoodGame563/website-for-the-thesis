@@ -45,24 +45,31 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
     if (!isActive) {
       setIsLoading(true);
       try {
-        const token = await TokenManager.getValidAccessToken();
-        if (!token) {
-          throw new Error('Ошибка авторизации');
-        }
+        const fetchTasks = async () => {
+          const token = await TokenManager.getValidAccessToken();
+          if (!token) {
+            throw new Error('Ошибка авторизации');
+          }
 
-        const response = await fetch('http://127.0.0.1:8000/api/v1/get/history', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+          const response = await fetch('http://127.0.0.1:8000/api/v1/get/history', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          });
 
-        if (!response.ok) {
-          throw new Error('Ошибка получения задач');
-        }
+          if (!response.ok) {
+            const error = new Error('Ошибка получения задач');
+            error.status = response.status;
+            throw error;
+          }
 
-        const data = await response.json();
+          const data = await response.json();
+          return data;
+        };
+
+        const data = await fetchTasks();
         const tasks = data.elements || [];
         console.log('Tasks from API:', tasks);
 
@@ -95,7 +102,8 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
         setOtherTasks(otherTasksList);
       } catch (error) {
         console.error('Error fetching tasks:', error);
-        addNotification(handleFetchError(error));
+        const message = await handleFetchError(error, handleToggleClick);
+        addNotification(message || 'Ошибка при получении задач');
       } finally {
         setIsLoading(false);
       }
@@ -111,27 +119,34 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
   const handleTaskClick = async (taskId) => {
     setIsLoading(true);
     try {
-      const token = await TokenManager.getValidAccessToken();
-      if (!token) {
-        throw new Error('Ошибка авторизации');
-      }
+      const fetchTask = async () => {
+        const token = await TokenManager.getValidAccessToken();
+        if (!token) {
+          throw new Error('Ошибка авторизации');
+        }
 
-      const response = await fetch(`http://127.0.0.1:8000/api/v1/get/task`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          id: taskId
-        })
-      });
+        const response = await fetch(`http://127.0.0.1:8000/api/v1/get/task`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            id: taskId
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error('Ошибка получения данных задачи');
-      }
+        if (!response.ok) {
+          const error = new Error('Ошибка получения данных задачи');
+          error.status = response.status;
+          throw error;
+        }
 
-      const taskData = await response.json();
+        const taskData = await response.json();
+        return taskData;
+      };
+
+      const taskData = await fetchTask();
       console.log('Task data from API:', taskData);
 
       // Добавляем id задачи к данным перед отправкой
@@ -146,8 +161,8 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
       }
     } catch (error) {
       console.error('Error fetching task data:', error);
-      // Добавляем уведомление об ошибке
-      addNotification(handleFetchError(error));
+      const message = await handleFetchError(error, () => handleTaskClick(taskId));
+      addNotification(message || 'Ошибка при получении задачи');
     } finally {
       setIsLoading(false);
     }

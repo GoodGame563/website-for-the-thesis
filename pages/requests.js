@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import AnalysisForm from '../components/AnalysisForm';
 import Sidebar from '../components/Sidebar';
 import { TokenManager } from '../utils/tokenManager';
+import { handleFetchError } from '../utils/fetchErrorHandler';
 
 export default function RequestsPage() {
   const router = useRouter();
@@ -17,10 +18,15 @@ export default function RequestsPage() {
     }
 
     const checkAuth = async () => {
-      const token = await TokenManager.getValidAccessToken();
-      if (!token) {
-        TokenManager.clearTokens();
-        router.replace('/login');
+      try {
+        const token = await TokenManager.getValidAccessToken();
+        if (!token) {
+          TokenManager.clearTokens();
+          router.replace('/login');
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        await handleFetchError(error);
       }
     };
     checkAuth();

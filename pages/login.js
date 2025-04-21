@@ -5,6 +5,7 @@ import LoginForm from '../components/LoginForm';
 
 export default function LoginPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -15,6 +16,15 @@ export default function LoginPage() {
       router.push('/requests');
     }
   }, [router]);
+
+  useEffect(() => {
+    // Check for error message in localStorage when component mounts
+    const error = localStorage.getItem('loginError');
+    if (error) {
+      setLoginError(error);
+      localStorage.removeItem('loginError'); // Clear the error after displaying
+    }
+  }, []);
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
@@ -35,6 +45,11 @@ export default function LoginPage() {
       animate="animate"
       exit="exit"
     >
+      {loginError && (
+        <div className="error-message">
+          {loginError}
+        </div>
+      )}
       <LoginForm onLoginSuccess={handleLoginSuccess} />
     </motion.div>
   );

@@ -3,6 +3,7 @@ import styles from '../styles/Account.module.css';
 import { useRouter } from 'next/router';
 import Button from '../components/Button';
 import { TokenManager } from '../utils/tokenManager';
+import { handleFetchError } from '../utils/fetchErrorHandler';
 
 export default function Account() {
     const [userData, setUserData] = useState({
@@ -35,14 +36,16 @@ export default function Account() {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch account data: ${response.status}`);
+                    const error = new Error('Failed to fetch account data');
+                    error.status = response.status;
+                    throw error;
                 }
 
                 const data = await response.json();
                 setUserData(data);
             } catch (error) {
                 console.error('Error fetching user data:', error);
-                // Handle error appropriately
+                await handleFetchError(error, fetchUserData);
             }
         };
 
