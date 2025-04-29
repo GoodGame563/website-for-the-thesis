@@ -67,7 +67,7 @@ export class TokenManager {
           })
         });
 
-        if (response.status === 404) {
+        if (response.status === 401) {
           this.clearTokens();
           if (typeof window !== 'undefined') {
             localStorage.setItem('loginError', 'Ваша сессия недействительна');

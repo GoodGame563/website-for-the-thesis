@@ -50,10 +50,35 @@ export default function AccountModal({ isOpen, onClose }) {
         }
     }, [isOpen, router]);
 
-    const handleLogout = () => {
-        TokenManager.clearTokens();
-        router.push('/login');
-        onClose();
+    const handleLogout = async () => {
+        try {
+            const token = await TokenManager.getValidAccessToken();
+            if (!token) {
+                TokenManager.clearTokens();
+                router.push('/login');
+                return;
+            }
+
+            const response = await fetch('http://localhost:8000/api/v1/exit', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                const error = new Error('Failed to logout');
+                error.status = response.status;
+                throw error;
+            }
+
+            TokenManager.clearTokens();
+            router.push('/login');
+            onClose();
+        } catch (error) {
+            console.error('Error during logout:', error);
+            await handleFetchError(error, handleLogout);
+        }
     };
 
     const handleDeleteSession = async (sessionId, e) => {
