@@ -16,7 +16,7 @@ export default function LoginForm({ onLoginSuccess }) {
 
   const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
 
-  // Словарь для перевода стандартных ошибок (ключи в нижнем регистре)
+
   const errorMessages = {
     'failed to fetch': 'Ошибка подключения к серверу. Пожалуйста, проверьте своё подключение к интернету.',
     'network error': 'Ошибка сети. Пожалуйста, проверьте подключение к интернету.',
@@ -88,6 +88,7 @@ export default function LoginForm({ onLoginSuccess }) {
       const response = await fetch('http://localhost:8000/api/v1/authorization', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: "include",
         body: JSON.stringify({
           email,
           password,

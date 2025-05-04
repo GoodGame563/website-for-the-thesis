@@ -10,19 +10,17 @@ export default function LoginPage() {
 
   useEffect(() => {
     const accessToken = localStorage.getItem('accessToken');
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (accessToken && refreshToken) {
+    if (accessToken) {
       setIsAuthenticated(true);
       router.push('/requests');
     }
   }, [router]);
 
   useEffect(() => {
-    // Check for error message in localStorage when component mounts
     const error = localStorage.getItem('loginError');
     if (error) {
       setLoginError(error);
-      localStorage.removeItem('loginError'); // Clear the error after displaying
+      localStorage.removeItem('loginError');
     }
   }, []);
 

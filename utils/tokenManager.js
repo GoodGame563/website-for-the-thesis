@@ -1,3 +1,4 @@
+'use client';
 import { handleFetchError } from './fetchErrorHandler';
 
 export class TokenManager {
@@ -11,9 +12,8 @@ export class TokenManager {
 
   static setTokens(data) {
     localStorage.setItem('accessToken', data.accessToken.token);
-    localStorage.setItem('refreshToken', data.refreshToken.token);
     localStorage.setItem('accessTokenLifetime', data.accessToken.lifeTime[0].toString());
-    localStorage.setItem('refreshTokenLifetime', data.refreshToken.lifeTime[0].toString());
+    localStorage.setItem('refreshTokenLifetime', data.refreshTokenLifeTime[0].toString());
     this.setTokenTimestamp();
   }
 
@@ -33,13 +33,11 @@ export class TokenManager {
 
   static hasValidTokens() {
     const accessToken = localStorage.getItem('accessToken');
-    const refreshToken = localStorage.getItem('refreshToken');
-    return !!(accessToken && refreshToken);
+    return !!(accessToken);
   }
 
   static clearTokens() {
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('tokenTimestamp');
     localStorage.removeItem('accessTokenLifetime');
     localStorage.removeItem('refreshTokenLifetime');
@@ -47,31 +45,26 @@ export class TokenManager {
 
   static async refreshTokens() {
     try {
-      const refreshToken = this.getRefreshToken();
-      if (!refreshToken) {
-        console.error('No refresh token available');
-        return false;
-      }
-
       const makeRefreshRequest = async () => {
-        const response = await fetch('http://127.0.0.1:8000/api/v1/refresh', {
+        const response = await fetch('http://localhost:8000/api/v1/refresh', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: "include",
           body: JSON.stringify({
-            refreshToken: refreshToken,
             browser: navigator.userAgent,
             device: navigator.platform,
             os: navigator.oscpu || 'Unknown OS',
           })
         });
+        console.log(response);
 
         if (response.status === 401) {
           this.clearTokens();
           if (typeof window !== 'undefined') {
             localStorage.setItem('loginError', 'Ваша сессия недействительна');
-            window.location.href = '/login';
+            // window.location.href = '/login';
           }
           return false;
         }

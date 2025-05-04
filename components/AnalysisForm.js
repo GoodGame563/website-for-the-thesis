@@ -384,9 +384,54 @@ export default function AnalysisForm({ onReset, onFill }) {
     return await Promise.all(descriptionPromises);
   };
 
-  // Создание задачи на сервере
+  const fetchReviews = async (root) => {
+    const endpoints = ['feedbacks2.wb.ru', 'feedbacks1.wb.ru'];
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(`/api/proxyReviews?root=${root}&endpoint=${endpoint}`);
+
+        if (!response.ok) {
+          console.error(`Failed to fetch reviews from ${endpoint}`);
+          continue;
+        }
+
+        const data = await response.json();
+        if (data?.feedbacks) {
+          return data.feedbacks.map(feedback => ({
+            text: feedback.text || '',
+            pros: feedback.pros || '',
+            cons: feedback.cons || ''
+          }));
+        }
+      } catch (error) {
+        console.error(`Error fetching reviews from ${endpoint}:`, error);
+      }
+    }
+
+    return [];
+  };
+
+  const fetchMainPhotoUrl = async (mainId) => {
+    try {
+      const photoUrl = await getAllPhotoUrl(mainId);
+      return photoUrl;
+    } catch (error) {
+      console.error('Error fetching main product photo URL:', error);
+      return '';
+    }
+  };
+
   const createTaskOnServer = async (mainData, products, usedWords, unusedWords, token) => {
     try {
+      const mainPhotoUrl = await fetchMainPhotoUrl(mainData.id);
+      const enrichedMainData = { ...mainData, image_url: mainPhotoUrl || mainData.image_url };
+
+      const enrichedProducts = products.map((product, index) => ({
+        ...product,
+        image_url: photoUrls[index] || product.image_url,
+      }));
+
       const response = await fetch(`http://127.0.0.1:8000/api/v1/create/task/`, {
         method: 'POST',
         headers: {
@@ -394,13 +439,13 @@ export default function AnalysisForm({ onReset, onFill }) {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          main: mainData,
-          products,
+          main: enrichedMainData,
+          products: enrichedProducts,
           used_words: usedWords,
           unused_words: unusedWords,
         }),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Ошибка создания задачи');
@@ -545,14 +590,13 @@ export default function AnalysisForm({ onReset, onFill }) {
         currentWords.unused,
         token
       );
-      
+
       setResults(['Результат анализа товара']);
       setDisplayedResults(['']);
       setIsOverlayVisible(false);
-      
     } catch (error) {
       setError(error.message);
-      setIsGenerating(false); // Разблокируем настройки при ошибке
+      setIsGenerating(false);
     } finally {
       setIsLoading(false);
     }
@@ -565,8 +609,14 @@ export default function AnalysisForm({ onReset, onFill }) {
       const token = localStorage.getItem('accessToken');
       if (!token) throw new Error('Ошибка авторизации');
 
-      // Отправляем запрос на перегенерацию
-      console.log(currentTaskId)
+      const mainPhotoUrl = await fetchMainPhotoUrl(mainData.id);
+      const enrichedMainData = { ...mainData, image_url: mainPhotoUrl || mainData.image_url };
+
+      const enrichedProducts = carouselItems.map((product, index) => ({
+        ...product,
+        image_url: photoUrls[index] || product.image_url,
+      }));
+
       const response = await fetch('http://127.0.0.1:8000/api/v1/regenerate/task/', {
         method: 'POST',
         headers: {
@@ -575,8 +625,8 @@ export default function AnalysisForm({ onReset, onFill }) {
         },
         body: JSON.stringify({
           id: currentTaskId,
-          main: mainData,
-          products: carouselItems,
+          main: enrichedMainData,
+          products: enrichedProducts,
           used_words: currentWords.used,
           unused_words: currentWords.unused,
         }),
@@ -590,7 +640,6 @@ export default function AnalysisForm({ onReset, onFill }) {
       setResults(['Результат перегенерации товара']);
       setDisplayedResults(['']);
       setIsOverlayVisible(false);
-      
     } catch (error) {
       setError(error.message);
     } finally {
