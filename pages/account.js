@@ -63,6 +63,7 @@ export default function Account() {
 
             const response = await fetch('http://localhost:8000/api/v1/exit', {
                 method: 'POST',
+                credentials: "include",
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -84,6 +85,9 @@ export default function Account() {
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
+        if (isNaN(date)) {
+            return 'Некорректная дата';
+        }
         return date.toLocaleString('ru-RU', {
             year: 'numeric',
             month: 'numeric',
@@ -108,12 +112,19 @@ export default function Account() {
                 <div className={styles.sessionsContainer}>
                     <h2>Активные сессии</h2>
                     <div className={styles.sessionsList}>
-                        {userData.sessions.map(session => (
-                            <div key={session.id} className={styles.sessionItem}>
-                                <p>Браузер: {session.browser || 'Неизвестно'}</p>
-                                <p>Последняя активность: {formatDate(session.lastActivity)}</p>
-                            </div>
-                        ))}
+                        {(() => {
+                            console.log('Сессии до сортировки:', userData.sessions);
+                            const sortedSessions = userData.sessions
+                                .filter(session => session.lastActivity)
+                                .sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
+                            console.log('Сессии после сортировки:', sortedSessions);
+                            return sortedSessions.map(session => (
+                                <div key={session.id} className={styles.sessionItem}>
+                                    <p>Браузер: {session.browser || 'Неизвестно'}</p>
+                                    <p>Последняя активность: {formatDate(session.lastActivity)}</p>
+                                </div>
+                            ));
+                        })()}
                     </div>
                 </div>
             </div>

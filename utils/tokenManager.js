@@ -32,6 +32,7 @@ export class TokenManager {
   }
 
   static hasValidTokens() {
+    async () => {await this.refreshTokens();}
     const accessToken = localStorage.getItem('accessToken');
     return !!(accessToken);
   }
