@@ -24,7 +24,7 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  align-items: start;
+  align-items: flex-start;
   overflow-y: auto;
   will-change: transform;
   pointer-events: auto;

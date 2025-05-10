@@ -1,38 +1,25 @@
 'use client';
 import { handleFetchError } from './fetchErrorHandler';
+import { ApiClient } from './ApiClient';
+
+const apiClient = new ApiClient();
 
 export class TokenManager {
-  static getTokenTimestamp() {
-    return localStorage.getItem('tokenTimestamp');
-  }
-
-  static setTokenTimestamp() {
-    localStorage.setItem('tokenTimestamp', Date.now().toString());
-  }
-
   static setTokens(data) {
     localStorage.setItem('accessToken', data.accessToken.token);
     localStorage.setItem('accessTokenLifetime', data.accessToken.lifeTime[0].toString());
     localStorage.setItem('refreshTokenLifetime', data.refreshTokenLifeTime[0].toString());
-    this.setTokenTimestamp();
-  }
-
-  static getAccessToken() {
-    return localStorage.getItem('accessToken');
-  }
-
-  static getRefreshToken() {
-    return localStorage.getItem('refreshToken');
+    localStorage.setItem('tokenTimestamp', Date.now().toString());
+    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC;'
   }
 
   static isAccessTokenExpired() {
-    const timestamp = Number(this.getTokenTimestamp());
+    const timestamp = Number(localStorage.getItem('tokenTimestamp'));
     const lifetime = Number(localStorage.getItem('accessTokenLifetime')) * 1000;
     return Date.now() - timestamp > lifetime;
   }
 
   static hasValidTokens() {
-    async () => {await this.refreshTokens();}
     const accessToken = localStorage.getItem('accessToken');
     return !!(accessToken);
   }
@@ -45,69 +32,48 @@ export class TokenManager {
   }
 
   static async refreshTokens() {
-    try {
-      const makeRefreshRequest = async () => {
-        const response = await fetch('http://localhost:8000/api/v1/refresh', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            browser: navigator.userAgent,
-            device: navigator.platform,
-            os: navigator.oscpu || 'Unknown OS',
-          })
-        });
-        console.log(response);
-
-        if (response.status === 401) {
-          this.clearTokens();
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('loginError', 'Ваша сессия недействительна');
-            // window.location.href = '/login';
-          }
-          return false;
-        }
-
-        if (!response.ok) {
-          const error = new Error(`Token refresh failed with status ${response.status}`);
-          error.status = response.status;
-          throw error;
-        }
-
-        const data = await response.json();
-        return data;
-      };
-
-      const data = await makeRefreshRequest();
-      if (!data) return false;
-
-      this.setTokens(data);
-      console.log('Tokens successfully refreshed');
-      return true;
-    } catch (error) {
-      console.error('Error refreshing tokens:', error);
-      await handleFetchError(error);
-      return false;
+    const data = await apiClient.refreshTokens();
+    if (!(data.type === 'Ok')) {
+      if (data.type === 'Error'){
+        this.clearTokens();
+        return 'err'; 
+      }      
+      return 'wait';  
     }
+    this.setTokens(data.body);
+    console.log('Tokens successfully refreshed');
+    return 'ok';
   }
 
   static async getValidAccessToken() {
-    if (!this.hasValidTokens()) {
-      return null;
-    }
-
-    if (!this.isAccessTokenExpired()) {
-      return this.getAccessToken();
+    if (this.hasValidTokens() && !this.isAccessTokenExpired()) {
+      const access = localStorage.getItem('accessToken');
+      if (access != null)
+      return{ 
+        result: access,
+        type: 'Ok'
+      }
     }
 
     const success = await this.refreshTokens();
-    if (!success) {
-      this.clearTokens();
-      return null;
+    if (!(success === 'ok')) {
+      return {
+        result: success === 'err' ? 'Сессия больше не действительна' : 'Ожидайте пропало подключение к серверу',
+        type: success === 'err' ? 'Error' : 'ErrorSystem'
+      }
     }
 
-    return this.getAccessToken();
+    if (this.hasValidTokens() && !this.isAccessTokenExpired()) {
+      const access = localStorage.getItem('accessToken');
+      if (access != null)
+      return{ 
+        result: access,
+        type: 'Ok'
+      }
+    }
+    return{
+      result: "Idk",
+      type: 'ErrorRofl'
+    }
   }
 }

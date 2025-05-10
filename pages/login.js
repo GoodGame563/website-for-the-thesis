@@ -8,13 +8,13 @@ export default function LoginPage() {
   const [loginError, setLoginError] = useState('');
   const router = useRouter();
 
-  useEffect(() => {
-    const accessToken = localStorage.getItem('accessToken');
-    if (accessToken) {
-      setIsAuthenticated(true);
-      router.push('/requests');
-    }
-  }, [router]);
+  // useEffect(() => {
+  //   const accessToken = localStorage.getItem('accessToken');
+  //   if (accessToken) {
+  //     setIsAuthenticated(true);
+  //     router.push('/requests');
+  //   }
+  // }, [router]);
 
   useEffect(() => {
     const error = localStorage.getItem('loginError');

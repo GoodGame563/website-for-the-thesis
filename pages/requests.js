@@ -12,8 +12,8 @@ export default function RequestsPage() {
   const fillFormRef = useRef(null);
 
   useEffect(() => {
-    if (!TokenManager.hasValidTokens()) {
-      router.replace('/login');
+    if (TokenManager.hasValidTokens()) {
+      // router.replace('/login');
       return;
     }
 
@@ -22,7 +22,7 @@ export default function RequestsPage() {
         const token = await TokenManager.getValidAccessToken();
         if (!token) {
           TokenManager.clearTokens();
-          router.replace('/login');
+          // router.replace('/login');
         }
       } catch (error) {
         console.error('Auth check error:', error);

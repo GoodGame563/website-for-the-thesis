@@ -5,6 +5,8 @@ import Button from './Button';
 import { useRouter } from 'next/router';
 import { TokenManager } from '../utils/tokenManager';
 import { handleFetchError } from '../utils/fetchErrorHandler';
+import { ApiClient } from "../utils/ApiClient";
+const apiClient = new ApiClient();
 
 export default function AccountModal({ isOpen, onClose }) {
     const [userData, setUserData] = useState({
@@ -12,37 +14,47 @@ export default function AccountModal({ isOpen, onClose }) {
         email: '',
         sessions: []
     });
+    const [notifications, setNotifications] = useState([]);
     const router = useRouter();
+    const addNotification = (message) => {
+        const id = Date.now();
+        setNotifications((prev) => [...prev, { id, message }]);
+
+        setTimeout(() => {
+            setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+        }, 3000);
+    };
 
     useEffect(() => {
         if (isOpen) {
             const fetchUserData = async () => {
-                try {
-                    const token = await TokenManager.getValidAccessToken();
-                    if (!token) {
-                        TokenManager.clearTokens();
-                        router.push('/login');
-                        return;
+                let attempts = 0;
+                const maxAttempts = 2;
+                while (attempts < maxAttempts) {
+                  const response = await apiClient.getAccount();
+                  if (response.type === 'ErrorSystem') {
+                    addNotification(response.body);
+                    return null;
+                  }
+                  if (response.type === 'ErrorToken') {
+                    attempts++;
+                    const result = await TokenManager.refreshTokens();
+                    if (result === 'err'){
+                      addNotification(response.body);
+                      setTimeout(router.replace, 3000, '/login');
+                      return null;
                     }
-
-                    const response = await fetch('http://localhost:8000/api/v1/get/account', {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-
-                    if (!response.ok) {
-                        const error = new Error('Failed to fetch account data');
-                        error.status = response.status;
-                        throw error;
+                    if (attempts === maxAttempts) {
+                      addNotification(response.body);
+                      setTimeout(router.replace, 3000, '/login');
+                      return null;
                     }
-
-                    const data = await response.json();
+                    continue;
+                  }
+        
+                    const data = await response.body;
                     setUserData(data);
-                } catch (error) {
-                    console.error('Error fetching user data:', error);
-                    await handleFetchError(error, () => fetchUserData());
+                    return;
                 }
             };
 
@@ -51,68 +63,71 @@ export default function AccountModal({ isOpen, onClose }) {
     }, [isOpen, router]);
 
     const handleLogout = async () => {
-        try {
-            const token = await TokenManager.getValidAccessToken();
-            if (!token) {
-                TokenManager.clearTokens();
-                router.push('/login');
-                return;
+        let attempts = 0;
+        const maxAttempts = 2;
+        while (attempts < maxAttempts) {
+          const response = await apiClient.logout();
+          if (response.type === 'ErrorSystem') {
+            addNotification(response.body);
+            return null;
+          }
+          if (response.type === 'ErrorToken') {
+            attempts++;
+            const result = await TokenManager.refreshTokens();
+            if (result === 'err'){
+                addNotification(response.body);
+              setTimeout(router.replace, 3000, '/login');
+              return null;
             }
-
-            const response = await fetch('http://localhost:8000/api/v1/exit', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                const error = new Error('Failed to logout');
-                error.status = response.status;
-                throw error;
+            if (attempts === maxAttempts) {
+                addNotification(response.body);
+              setTimeout(router.replace, 3000, '/login');
+              return null;
             }
-
+            continue;
+          }
             TokenManager.clearTokens();
             router.push('/login');
             onClose();
-        } catch (error) {
-            console.error('Error during logout:', error);
-            await handleFetchError(error, handleLogout);
+            return;
         }
+
     };
 
     const handleDeleteSession = async (sessionId, e) => {
         e.stopPropagation();
-        try {
-            const token = await TokenManager.getValidAccessToken();
-            if (!token) {
-                TokenManager.clearTokens();
-                router.push('/login');
-                return;
+        let attempts = 0;
+        const maxAttempts = 2;
+        while (attempts < maxAttempts) {
+          const response = await apiClient.deleteSession(sessionId);
+          if (response.type === 'ErrorSystem') {
+            addNotification(response.body);
+            return null;
+          }
+          if (response.type === 'ErrorToken') {
+            attempts++;
+            const result = await TokenManager.refreshTokens();
+            if (result === 'err'){
+              addNotification(response.body);
+              setTimeout(router.replace, 3000, '/login');
+              return null;
             }
-
-            const response = await fetch(`http://localhost:8000/api/v1/delete/session`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ id: sessionId })
-            });
-
-            if (!response.ok) {
-                const error = new Error('Failed to delete session');
-                error.status = response.status;
-                throw error;
+            if (attempts === maxAttempts) {
+              addNotification(response.body);
+              setTimeout(router.replace, 3000, '/login');
+              return null;
             }
-
+            continue;
+          }
+          if(response.type === 'Error'){
+            addNotification("Ты не можешь удалить ссессию в которой ты находишься");
+            return null;
+          }
             setUserData(prev => ({
                 ...prev,
                 sessions: prev.sessions.filter(session => session.id !== sessionId)
             }));
-        } catch (error) {
-            console.error('Error deleting session:', error);
-            await handleFetchError(error, () => handleDeleteSession(sessionId, e));
+            return
         }
     };
 
@@ -142,6 +157,22 @@ export default function AccountModal({ isOpen, onClose }) {
         <AnimatePresence>
             {isOpen && (
                 <>
+                 <div className={styles.notificationList}>
+                <AnimatePresence mode="popLayout">
+                    {notifications.map((notif) => (
+                        <motion.div
+                            key={notif.id}
+                            className={styles.notification}
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        >
+                            {notif.message}
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </div>
                     <div className={styles.overlay} onClick={onClose} />
                     <motion.div
                         className={styles.modal}
@@ -160,7 +191,6 @@ export default function AccountModal({ isOpen, onClose }) {
                                 <h2>Активные сессии</h2>
                                 <div className={styles.sessionsList}>
                                     {userData.sessions.map(session => {
-                                        // Store session ID in closure but don't display it
                                         const handleDelete = (e) => handleDeleteSession(session.id, e);
                                         
                                         return (

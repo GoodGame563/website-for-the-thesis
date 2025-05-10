@@ -72,26 +72,53 @@
 
 .answerContainer {
   overflow-y: auto;
-  height: 60vh;
+  height: 80%;
   width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 1rem;
 }
 
 .horizontalItem {
-  width: 95%;
+  width: 100%;
   min-height: 5rem;
-  padding: 0.9375rem 1.5625rem;
-  margin: 0.5rem 0;
-  background: #f3f3f3;
+  padding: 1rem;
+  margin: 0;
+  background: #ffffff;
   border-radius: 0.5rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.144);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
   text-align: start;
   overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+.photoBlock {
+  background-color: rgba(52, 152, 219, 0.05);
+  border-left: 4px solid #3498db;
+}
+
+.textBlock {
+  background-color: rgba(46, 204, 113, 0.05);
+  border-left: 4px solid #2ecc71;
+}
+
+.reviewBlock {
+  background-color: rgba(231, 76, 60, 0.05);
+  border-left: 4px solid #e74c3c;
+}
+
+.horizontalItem p {
+  margin: 0;
+  padding: 0;
+  white-space: pre-wrap;
+  width: 100%;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .settingsBtn {

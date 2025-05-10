@@ -1,173 +1,150 @@
-import { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import styles from '../styles/LoginForm.module.css';
-import Button from './Button';
-import { TokenManager } from '../utils/tokenManager';
-import { handleFetchError } from '../utils/fetchErrorHandler';
+import { useState, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import styles from "../styles/LoginForm.module.css";
+import Button from "./Button";
+import { TokenManager } from "../utils/tokenManager";
+import { ApiClient } from "../utils/ApiClient";
+const apiClient = new ApiClient();
 
 export default function LoginForm({ onLoginSuccess }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const emailInputRef = useRef(null);
-  const passwordInputRef = useRef(null);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [emailError, setEmailError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const emailInputRef = useRef(null);
+    const passwordInputRef = useRef(null);
+    const [notifications, setNotifications] = useState([]);
 
-  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    const addNotification = useCallback((message) => {
+        const id = Date.now();
+        setNotifications((prev) => [...prev, { id, message }]);
+        setTimeout(() => {
+            setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+        }, 3000);
+    }, []);
 
+    const showError = (error, setter) => {
+        setter(error);
+    };
 
-  const errorMessages = {
-    'failed to fetch': 'Ошибка подключения к серверу. Пожалуйста, проверьте своё подключение к интернету.',
-    'network error': 'Ошибка сети. Пожалуйста, проверьте подключение к интернету.',
-    'authentication failed': 'Ошибка аутентификации. Проверьте правильность введенных данных.',
-    'invalid credentials': 'Неверные учетные данные. Проверьте email и пароль.',
-    'user not found': 'Пользователь не найден.',
-    'invalid email format': 'Неверный формат email адреса.',
-    'invalid password': 'Неверный пароль.',
-    'server error': 'Ошибка сервера. Попробуйте позже.',
-    'ошибка авторизации': 'Ошибка авторизации. Проверьте правильность введенных данных.',
-    'пожалуйста, введите корректный email':'Пожалуйста, введите корректный email'
-  };
+    const validateInput = (value, regex, errorSetter, errorMessage) => {
+        if (!value.trim()) {
+            showError(errorMessage.toLowerCase(), errorSetter);
+            return false;
+        }
+        if (!regex.test(value)) {
+            showError(errorMessage.toLowerCase(), errorSetter);
+            return false;
+        }
+        errorSetter("");
+        return true;
+    };
 
-  const formatErrorMessage = (error) => {
-    if (!error) return 'Произошла неизвестная ошибка';
-    
-    if (typeof error === 'string') {
-      const errorKey = error.toLowerCase();
-      return errorMessages[errorKey] || error;
-    }
-    
-    if (error.message) { 
-      const errorKey = error.message.toLowerCase();
-      return errorMessages[errorKey] || error.message;
-    }
+    const handleLogin = async () => {
+        setEmailError("");
+        setPasswordError("");
 
-    return 'Произошла неизвестная ошибка';
-  };
+        const isEmailValid = validateInput(email, emailRegex, setEmailError, "Пожалуйста, введите корректный email");
 
-  const showError = (error, setter) => {
-    const formattedError = formatErrorMessage(error);
-    setter(formattedError);
-  };
+        if (!password.trim()) {
+            showError("Пожалуйста, введите пароль", setPasswordError);
+            return;
+        }
 
-  const validateInput = (value, regex, errorSetter, errorMessage) => {
-    if (!value.trim()) {
-      showError(errorMessage.toLowerCase(), errorSetter);
-      return false;
-    }
-    if (!regex.test(value)) {
-      showError(errorMessage.toLowerCase(), errorSetter);
-      return false;
-    }
-    errorSetter('');
-    return true;
-  };
+        if (!isEmailValid) return;
 
-  const handleLogin = async () => {
-    // Очищаем предыдущие ошибки
-    setEmailError('');
-    setPasswordError('');
+        setIsLoading(true);
+        const response = await apiClient.login(email, password);
 
-    const isEmailValid = validateInput(
-      email,
-      emailRegex,
-      setEmailError,
-      'Пожалуйста, введите корректный email'
+        if (response.type === "ErrorSystem") {
+            addNotification(response.body);
+            setIsLoading(false);
+            return;
+        }
+        if (response.type === "Error") {
+            console.log(response.body);
+            showError(response.body, setEmailError);
+            setIsLoading(false);
+            return;
+        }
+
+        const data = await response.body;
+        TokenManager.setTokens(data);
+        onLoginSuccess();
+    };
+
+    const inputShake = {
+        shake: {
+            x: [0, -5, 5, -5, 0],
+            transition: { duration: 0.3, ease: "easeInOut" },
+        },
+    };
+
+    const errorVariants = {
+        hidden: { opacity: 0, y: -5 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeInOut" } },
+    };
+
+    return (
+        <div className={styles.container}>
+            <div className={styles.notificationList}>
+                <AnimatePresence>
+                    {notifications.map((notif) => (
+                        <motion.div
+                            key={notif.id}
+                            className={styles.notification}
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        >
+                            {notif.message}
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </div>
+            <h1>Вход</h1>
+            <motion.input
+                ref={emailInputRef}
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`${styles.input} ${emailError ? styles.error : ""}`}
+                variants={inputShake}
+                animate={emailError ? "shake" : undefined}
+            />
+            <motion.div
+                className={styles.errorMessage}
+                variants={errorVariants}
+                initial="hidden"
+                animate={emailError ? "visible" : "hidden"}
+            >
+                {emailError}
+            </motion.div>
+            <motion.input
+                ref={passwordInputRef}
+                type="password"
+                placeholder="Пароль"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`${styles.input} ${passwordError ? styles.error : ""}`}
+                variants={inputShake}
+                animate={passwordError ? "shake" : undefined}
+            />
+            <motion.div
+                className={styles.errorMessage}
+                variants={errorVariants}
+                initial="hidden"
+                animate={passwordError ? "visible" : "hidden"}
+            >
+                {passwordError}
+            </motion.div>
+            <Button onClick={handleLogin} disabled={isLoading} isLoading={isLoading}>
+                {isLoading ? <div className={styles.loading}></div> : "Войти"}
+            </Button>
+        </div>
     );
-
-    if (!password.trim()) {
-      showError('Пожалуйста, введите пароль', setPasswordError);
-      return;
-    }
-
-    if (!isEmailValid) return;
-    
-    setIsLoading(true);
-    try {
-      const response = await fetch('http://localhost:8000/api/v1/authorization', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: "include",
-        body: JSON.stringify({
-          email,
-          password,
-          browser: navigator.userAgent,
-          device: navigator.platform,
-          os: navigator.oscpu || 'Unknown OS',
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'ошибка авторизации');
-      }
-
-      const data = await response.json();
-      TokenManager.setTokens(data);
-      onLoginSuccess();
-    } catch (error) {
-      const errorMessage = handleFetchError(error);
-      showError(errorMessage.toLowerCase(), setEmailError);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const inputShake = {
-    shake: {
-      x: [0, -5, 5, -5, 0],
-      transition: { duration: 0.3, ease: 'easeInOut' },
-    },
-  };
-
-  const errorVariants = {
-    hidden: { opacity: 0, y: -5 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeInOut' } },
-  };
-
-  return (
-    <div className={styles.container}>
-      <h1>Вход</h1>
-      <motion.input
-        ref={emailInputRef}
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className={`${styles.input} ${emailError ? styles.error : ''}`}
-        variants={inputShake}
-        animate={emailError ? 'shake' : undefined}
-      />
-      <motion.div
-        className={styles.errorMessage}
-        variants={errorVariants}
-        initial="hidden"
-        animate={emailError ? 'visible' : 'hidden'}
-      >
-        {emailError}
-      </motion.div>
-      <motion.input
-        ref={passwordInputRef}
-        type="password"
-        placeholder="Пароль"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className={`${styles.input} ${passwordError ? styles.error : ''}`}
-        variants={inputShake}
-        animate={passwordError ? 'shake' : undefined}
-      />
-      <motion.div
-        className={styles.errorMessage}
-        variants={errorVariants}
-        initial="hidden"
-        animate={passwordError ? 'visible' : 'hidden'}
-      >
-        {passwordError}
-      </motion.div>
-      <Button onClick={handleLogin} disabled={isLoading} isLoading={isLoading}>
-        {isLoading ? <div className={styles.loading}></div> : 'Войти'}
-      </Button>
-    </div>
-  );
 }
