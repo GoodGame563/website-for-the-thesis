@@ -378,4 +378,8 @@ export class ApiClient {
     }
     return this.request('/delete/task', 'POST', body, true);
   }
+
+  async getUsers() {
+    return this.request('/get/users', 'GET');
+  }
 }

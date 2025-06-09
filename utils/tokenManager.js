@@ -1,8 +1,15 @@
 'use client';
 import { handleFetchError } from './fetchErrorHandler';
-import { ApiClient } from './ApiClient';
 
-const apiClient = new ApiClient();
+let apiClient = null;
+function getApiClient() {
+  if (!apiClient) {
+    const { ApiClient } = require('./ApiClient');
+    apiClient = new ApiClient();
+  }
+  return apiClient;
+}
+
 function clearTokensInSystem() {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('tokenTimestamp');
@@ -36,7 +43,7 @@ export class TokenManager {
 
 
   static async refreshTokens() {
-    const data = await apiClient.refreshTokens();
+    const data = await getApiClient().refreshTokens();
     if (!(data.type === 'Ok')) {
       if (data.type === 'ErrorToken'){
         clearTokensInSystem();
