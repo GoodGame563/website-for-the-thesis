@@ -6,15 +6,9 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!TokenManager.hasValidTokens()) {
-      router.replace('/login');
-      return;
-    }
-
     const checkAuth = async () => {
       const token = await TokenManager.getValidAccessToken();
-      if (!token) {
-        TokenManager.clearTokens();
+      if (token.type === 'Error') {
         router.replace('/login');
       } else {
         router.replace('/requests');

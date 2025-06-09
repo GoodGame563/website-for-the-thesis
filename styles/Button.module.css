@@ -13,7 +13,7 @@
   border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.3s ease;
-  width: 12rem;
+  /* width: 12rem; */
   height: 3.5rem;
 }
 

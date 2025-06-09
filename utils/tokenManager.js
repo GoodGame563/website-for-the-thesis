@@ -3,6 +3,13 @@ import { handleFetchError } from './fetchErrorHandler';
 import { ApiClient } from './ApiClient';
 
 const apiClient = new ApiClient();
+function clearTokensInSystem() {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('tokenTimestamp');
+    localStorage.removeItem('accessTokenLifetime');
+    localStorage.removeItem('refreshTokenLifetime');
+    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC;'
+  }
 
 export class TokenManager {
   static setTokens(data) {
@@ -10,7 +17,10 @@ export class TokenManager {
     localStorage.setItem('accessTokenLifetime', data.accessToken.lifeTime[0].toString());
     localStorage.setItem('refreshTokenLifetime', data.refreshTokenLifeTime[0].toString());
     localStorage.setItem('tokenTimestamp', Date.now().toString());
-    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC;'
+    
+  }
+  static clear(){
+    clearTokensInSystem();
   }
 
   static isAccessTokenExpired() {
@@ -24,18 +34,12 @@ export class TokenManager {
     return !!(accessToken);
   }
 
-  static clearTokens() {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('tokenTimestamp');
-    localStorage.removeItem('accessTokenLifetime');
-    localStorage.removeItem('refreshTokenLifetime');
-  }
 
   static async refreshTokens() {
     const data = await apiClient.refreshTokens();
     if (!(data.type === 'Ok')) {
-      if (data.type === 'Error'){
-        this.clearTokens();
+      if (data.type === 'ErrorToken'){
+        clearTokensInSystem();
         return 'err'; 
       }      
       return 'wait';  
@@ -54,9 +58,16 @@ export class TokenManager {
         type: 'Ok'
       }
     }
-
+    if (!this.hasValidTokens()){
+      return{
+        type: 'Error',
+        result: ''
+      }
+    }
     const success = await this.refreshTokens();
     if (!(success === 'ok')) {
+      clearTokensInSystem()
+      console.log(success)
       return {
         result: success === 'err' ? 'Сессия больше не действительна' : 'Ожидайте пропало подключение к серверу',
         type: success === 'err' ? 'Error' : 'ErrorSystem'

@@ -104,6 +104,31 @@
   color: #007BFF;
 }
 
+.deleteButton {
+  opacity: 0;
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #ff4444;
+  transition: opacity 0.2s, color 0.2s, background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+}
+
+.taskItem:hover .deleteButton {
+  opacity: 1;
+}
+
+.deleteButton:hover {
+  background: rgba(255, 68, 68, 0.1);
+  color: #b71c1c;
+}
+
 .editContainer {
   display: flex;
   width: 100%;

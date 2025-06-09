@@ -1,0 +1,83 @@
+.container {
+  max-width: 98vw;
+  width: 98vw;
+  margin: 24px auto;
+  padding: 24px 1vw;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+}
+
+.title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.container table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fafbfc;
+}
+
+.container th, .container td {
+  padding: 14px 18px;
+  text-align: left;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.container th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+
+.container tr:last-child td {
+  border-bottom: none;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.actionBtn {
+  margin: 0;
+  margin-bottom: 0;
+  width: 100%;
+  padding: 10px 0;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.actionBtn:last-child {
+  background: #10b981;
+}
+
+.actionBtn:hover {
+  opacity: 0.85;
+}
+
+.backBtn {
+  margin-bottom: 24px;
+  padding: 10px 28px;
+  background: #e5e7eb;
+  color: #222;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+  display: inline-block;
+}
+
+.backBtn:hover {
+  background: #d1d5db;
+}

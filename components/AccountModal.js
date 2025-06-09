@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import styles from '../styles/AccountModal.module.css';
 import Button from './Button';
 import { useRouter } from 'next/router';
-import { TokenManager } from '../utils/tokenManager';
+import { TokenManager, clearTokensInSystem } from '../utils/tokenManager';
 import { handleFetchError } from '../utils/fetchErrorHandler';
 import { ApiClient } from "../utils/ApiClient";
 const apiClient = new ApiClient();
@@ -86,7 +86,7 @@ export default function AccountModal({ isOpen, onClose }) {
             }
             continue;
           }
-            TokenManager.clearTokens();
+            TokenManager.clear();
             router.push('/login');
             onClose();
             return;

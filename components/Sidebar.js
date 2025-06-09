@@ -247,11 +247,16 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
                 }
                 continue;
             }
+            if (response.type === 'Ok'){
+                setEditingTaskId(null);
+                return;
+            }
 
             setTodayTasks((prev) => prev.map((task) => (task.id === taskId ? { ...task, name: editedName } : task)));
             setOtherTasks((prev) => prev.map((task) => (task.id === taskId ? { ...task, name: editedName } : task)));
 
             setEditingTaskId(null);
+            return;
         }
     };
 
@@ -319,10 +324,78 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
                             />
                         </svg>
                     </button>
+                    <button
+                        className={styles.deleteButton}
+                        onClick={async (e) => {
+                            e.stopPropagation();
+                            const response = await apiClient.deleteTask(task.id);
+                            if (response && response.type === 'Ok') {
+                                addNotification('Задача удалена');
+                                await refetchTasks();
+                            } else {
+                                addNotification('Ошибка при удалении задачи');
+                            }
+                        }}
+                    >
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/>
+                        </svg>
+                    </button>
                 </>
             )}
         </motion.div>
     );
+
+    const refetchTasks = async () => {
+        setIsLoading(true);
+        let attempts = 0;
+        const maxAttempts = 2;
+        while (attempts < maxAttempts) {
+            const response = await apiClient.getHistory();
+            if (response.type === "ErrorSystem") {
+                addNotification(response.body);
+                setIsLoading(false);
+                return;
+            }
+            if (response.type === "ErrorToken") {
+                attempts++;
+                const result = await TokenManager.refreshTokens();
+                if (result === "err") {
+                    addNotification(response.body);
+                    setTimeout(router.replace, 3000, "/login");
+                    setIsLoading(false);
+                    return;
+                }
+                if (attempts === maxAttempts) {
+                    addNotification(response.body);
+                    setTimeout(router.replace, 3000, "/login");
+                    setIsLoading(false);
+                    return;
+                }
+                continue;
+            }
+            const data = await response.body;
+            const tasks = (data && data.elements) || [];
+            const now = new Date();
+            const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+            const todayTasksList = [];
+            const otherTasksList = [];
+            tasks.forEach((task) => {
+                const taskDate = new Date(task.createdAt);
+                if (taskDate >= todayStart) {
+                    todayTasksList.push(task);
+                } else {
+                    otherTasksList.push(task);
+                }
+            });
+            todayTasksList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            otherTasksList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            setTodayTasks(todayTasksList);
+            setOtherTasks(otherTasksList);
+            setIsLoading(false);
+            return;
+        }
+    };
 
     const handleAccountClick = () => {
         setIsAccountModalOpen(true);

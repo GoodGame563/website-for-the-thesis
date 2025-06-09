@@ -52,13 +52,13 @@ export class ApiClient {
     if (requiresAuth) {
       const tokenData = await TokenManager.getValidAccessToken();
       switch (tokenData.type) {
-        case "Error":
+        case 'Error':
           return {
             type: 'Error',
             body: tokenData.result,
             bodyType: 'message'
           };
-        case "ErrorSystem":
+        case 'ErrorSystem':
           return {
             type: 'ErrorSystem',
             body: tokenData.result,
@@ -113,7 +113,7 @@ export class ApiClient {
         case 402:
           return {
             type: 'Error',
-            body: 'Payment required: Subscription or payment needed',
+            body: 'Оплатите для использования сервиса',
             bodyType: 'message'
           };
         case 404:
@@ -125,7 +125,13 @@ export class ApiClient {
         case 409:
           return {
             type: 'Error',
-            body: 'Conflict: Resource conflict occurred',
+            body: 'Такой email уже зарегистрирован',
+            bodyType: 'message'
+          };
+        case 413:
+          return {
+            type: 'Error',
+            body: 'Пожалуйста сообщите об данной ошибке администраторам и попробуйте другой товар',
             bodyType: 'message'
           };
         case 422:
@@ -163,6 +169,117 @@ export class ApiClient {
       };
     }
   }
+  async streamTaskInformation(taskId, onMessageCallback) {
+    try {
+      const headers = {
+        'Accept': 'text/plain',
+      };
+      const tokenData = await TokenManager.getValidAccessToken();
+      if (tokenData.type === 'Error' || tokenData.type === 'ErrorSystem') {
+        return {
+          type: tokenData.type,
+          body: tokenData.result,
+          bodyType: 'message'
+        };
+      }
+      headers['Authorization'] = `Bearer ${tokenData.result}`;
+
+      const controller = new AbortController();
+      const response = await fetch(`${this.baseUrl}/information?id=${taskId}`, {
+        headers,
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        return {
+          type: 'Error',
+          body: `HTTP error! status: ${response.status}`,
+          bodyType: 'message'
+        };
+      }
+
+      const reader = response.body.getReader();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          onMessageCallback({
+            type: 'Ok',
+            body: 'Stream completed',
+            bodyType: 'message'
+          });
+          break;
+        }
+
+        buffer += new TextDecoder().decode(value);
+        const messagesArray = buffer.split('\n\n');
+        buffer = messagesArray.pop();
+
+        for (const message of messagesArray) {
+          if (message.trim()) {
+            try {
+              const data = JSON.parse(message);
+              if (data.error) {
+                await onMessageCallback({
+                  type: 'Error',
+                  body: data.error,
+                  bodyType: 'message'
+                });
+                controller.abort();
+                return {
+                  type: 'Error',
+                  body: data.error,
+                  bodyType: 'message'
+                };
+              }
+
+              let messageType = 'Ok';
+              if (data.task_type === 'system' && data.message === 'done') {
+                messageType = 'Done';
+                controller.abort();
+              }
+
+              await onMessageCallback({
+                type: messageType,
+                body: {
+                  task_type: data.task_type,
+                  message: data.message
+                },
+                bodyType: 'struct'
+              });
+            } catch (error) {
+              await onMessageCallback({
+                type: 'Error',
+                body: `Failed to parse message: ${error.message}`,
+                bodyType: 'message'
+              });
+            }
+          }
+        }
+      }
+
+      return {
+        type: 'Ok',
+        body: 'Stream processing completed',
+        bodyType: 'message',
+        abortController: controller
+      };
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        return {
+          type: 'Error',
+          body: 'Stream aborted',
+          bodyType: 'message'
+        };
+      }
+      return {
+        type: 'ErrorSystem',
+        body: `Error in stream: ${error.message}`,
+        bodyType: 'message'
+      };
+    }
+  }
 
   async login(email, password) {
     const clientInfo = await getClientInfo();
@@ -174,6 +291,15 @@ export class ApiClient {
       os: clientInfo.os,
     };
     return this.request('/auth/authorization', 'POST', body, false);
+  }
+
+  async register(name, email, password) {
+    const body = {
+      email:email,
+      password:password,
+      name:name
+    };
+    return this.request('/auth/registration', 'POST', body, false);
   }
 
   async refreshTokens() {
@@ -236,5 +362,20 @@ export class ApiClient {
       unused_words: unusedWords,
     };
     return this.request('/regenerate/task', 'POST', body, true, true);
+  }
+
+  async postTask(taskid, taskType, message) {
+    const body = {
+      id: taskid,
+      taskType: taskType,
+      message: message
+    }
+    return this.request('/add/task', 'POST', body, true);
+  }
+  async deleteTask(taskId){
+    const body = {
+      id: taskId
+    }
+    return this.request('/delete/task', 'POST', body, true);
   }
 }

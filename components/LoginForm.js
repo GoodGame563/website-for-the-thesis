@@ -142,6 +142,12 @@ export default function LoginForm({ onLoginSuccess }) {
             >
                 {passwordError}
             </motion.div>
+            <div style={{ margin: '10px 0' }}>
+                <span>У вас нет аккаунта? </span>
+                <a href="/register" style={{ color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>
+                    Зарегистрироваться
+                </a>
+            </div>
             <Button onClick={handleLogin} disabled={isLoading} isLoading={isLoading}>
                 {isLoading ? <div className={styles.loading}></div> : "Войти"}
             </Button>

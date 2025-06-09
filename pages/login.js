@@ -2,27 +2,22 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import LoginForm from '../components/LoginForm';
+import { TokenManager } from '../utils/tokenManager';
 
 export default function LoginPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginError, setLoginError] = useState('');
   const router = useRouter();
 
-  // useEffect(() => {
-  //   const accessToken = localStorage.getItem('accessToken');
-  //   if (accessToken) {
-  //     setIsAuthenticated(true);
-  //     router.push('/requests');
-  //   }
-  // }, [router]);
-
   useEffect(() => {
-    const error = localStorage.getItem('loginError');
-    if (error) {
-      setLoginError(error);
-      localStorage.removeItem('loginError');
-    }
-  }, []);
+    const checkAuth = async () => {
+       const token = await TokenManager.getValidAccessToken();
+        if (token.type === 'Ok') {
+            router.push('/requests');
+        }
+    };
+    checkAuth();
+  }, [router]);
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);

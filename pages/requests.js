@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import AnalysisForm from '../components/AnalysisForm';
 import Sidebar from '../components/Sidebar';
 import { TokenManager } from '../utils/tokenManager';
-import { handleFetchError } from '../utils/fetchErrorHandler';
 
 export default function RequestsPage() {
   const router = useRouter();
@@ -12,22 +11,11 @@ export default function RequestsPage() {
   const fillFormRef = useRef(null);
 
   useEffect(() => {
-    if (TokenManager.hasValidTokens()) {
-      // router.replace('/login');
-      return;
-    }
-
     const checkAuth = async () => {
-      try {
-        const token = await TokenManager.getValidAccessToken();
-        if (!token) {
-          TokenManager.clearTokens();
-          // router.replace('/login');
+       const token = await TokenManager.getValidAccessToken();
+        if (token.type === 'Error') {
+          router.replace('/login');
         }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        await handleFetchError(error);
-      }
     };
     checkAuth();
   }, [router]);

@@ -40,29 +40,29 @@ const getUrl = (nomenclature) => {
     return "basket-21.wbbasket.ru";
 };
 
-// Генерация URL карточки
+
 const getCardUrl = (nomenclature) => {
     const domain = getUrl(Math.floor(nomenclature / 100000));
     return `https://${domain}/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/info/ru/card.json`;
 };
 
-// Генерация URL с явным basket-номером
+
 const getCardUrlWithoutUrl = (nomenclature, id) => {
     return `https://basket-${id}.wbbasket.ru/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/info/ru/card.json`;
 };
 
-// Генерация URL без явного basket-номера
+
 const getPhotoUrl = (nomenclature) => {
     const domain = getUrl(Math.floor(nomenclature / 100000));
     return `https://${domain}/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/big/1.webp`;
 };
 
-// Генерация URL с явным basket-номером
+
 const getPhotoUrlWithoutUrl = (nomenclature, id) => {
     return `https://basket-${id}.wbbasket.ru/vol${Math.floor(nomenclature / 100000)}/part${Math.floor(nomenclature / 1000)}/${nomenclature}/images/big/1.webp`;
 };
 
-// Асинхронная функция получения URL изображения
+
 const getAllPhotoUrl = async (nomenclature) => {
     let url = getPhotoUrl(nomenclature);
     while (true) {
@@ -84,7 +84,6 @@ const getAllPhotoUrl = async (nomenclature) => {
     return url;
 };
 
-// Основной компонент
 export default function AnalysisForm({ onReset, onFill }) {
     const [input, setInput] = useState("");
     const [error, setError] = useState("");
@@ -109,7 +108,47 @@ export default function AnalysisForm({ onReset, onFill }) {
     const [currentTaskId, setCurrentTaskId] = useState(null);
     const [controller, setController] = useState(null);
 
-    // Форматирование сообщения об ошибке
+    const [hoveredBlock, setHoveredBlock] = useState(null); 
+    const [expandedBlock, setExpandedBlock] = useState(null); 
+
+    useEffect(() => {
+        if (expandedBlock === null) return;
+        const handleClick = (e) => {
+            if (!e.target.closest('.' + styles.horizontalItem)) {
+                setExpandedBlock(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, [expandedBlock]);
+
+    const SSE_MESSAGES_KEY = "sseMessages";
+
+    function getSseMessagesFromStorage() {
+        const raw = localStorage.getItem(SSE_MESSAGES_KEY);
+        if (!raw) return null;
+        try {
+            return JSON.parse(raw);
+        } catch {
+            return null;
+        }
+    }
+    function clearSseMessagesInStorage() {
+        localStorage.removeItem(SSE_MESSAGES_KEY);
+    }
+
+    function saveSseMessageToStorage(newMessage, index) {
+        let messages = getSseMessagesFromStorage();
+        if (!Array.isArray(messages) || messages.length !== 3) {
+            messages = ["", "", ""];
+        }
+        messages[index] = messages[index]
+            ? messages[index] + newMessage
+            : newMessage;
+        localStorage.setItem(SSE_MESSAGES_KEY, JSON.stringify(messages));
+        setDisplayedResults(messages);
+    }
+
     const formatErrorMessage = (error) => {
         if (!error) return "Произошла неизвестная ошибка";
 
@@ -122,15 +161,14 @@ export default function AnalysisForm({ onReset, onFill }) {
             return "Произошла неизвестная ошибка";
         }
 
-        // Удаляем undefined и null из сообщения
+    
         message = message.replace(/undefined|null/g, "");
-        // Удаляем двойные пробелы
+    
         message = message.replace(/\s+/g, " ").trim();
-        // Делаем первую букву заглавной
         return message.charAt(0).toUpperCase() + message.slice(1);
     };
 
-    // Анимированное отображение сообщения об ошибке
+
     const showError = async (errorMessage) => {
         const formattedError = formatErrorMessage(errorMessage);
         if (!formattedError) return;
@@ -142,7 +180,6 @@ export default function AnalysisForm({ onReset, onFill }) {
         }
     };
 
-    // Функция сброса всех состояний
     const resetForm = () => {
         setInput("");
         setError("");
@@ -164,10 +201,11 @@ export default function AnalysisForm({ onReset, onFill }) {
             setController(null);
         }
         localStorage.removeItem("sseTaskId");
+        localStorage.removeItem("productAnalysisUrl"); 
+        setIsRestoredTask(false); 
         if (inputRef.current) inputRef.current.value = "";
     };
 
-    // Функция заполнения формы данными из API
     const fillForm = (data) => {
         const url = "https://www.wildberries.ru/catalog/" + data.main.id + "/detail.aspx";
         const mainId = fromUrlGetId(url);
@@ -184,16 +222,16 @@ export default function AnalysisForm({ onReset, onFill }) {
         setIsMovedUp(true);
         setIsLoading(false);
         if (data.isRestored) {
-            setIsRestoredTask(true); // Устанавливаем флаг восстановленной задачи только если задача восстановлена
+            setIsRestoredTask(true); 
         } else {
-            setIsRestoredTask(false); // Сбрасываем флаг для новых задач
+            setIsRestoredTask(false);
         }
-        setCurrentTaskId(data.id); // Сохраняем id задачи
+        setCurrentTaskId(data.id); 
 
-        // Устанавливаем основные данные товара
+        
         setMainData(data.main);
 
-        // Устанавливаем данные о товарах
+       
         setCarouselItems(
             data.products.map((product) => ({
                 id: product.id,
@@ -206,7 +244,6 @@ export default function AnalysisForm({ onReset, onFill }) {
             })),
         );
 
-        // Получаем URL фотографий для товаров
         const fetchPhotos = async () => {
             try {
                 const urls = await Promise.all(data.products.map((item) => getAllPhotoUrl(item.id)));
@@ -217,18 +254,21 @@ export default function AnalysisForm({ onReset, onFill }) {
         };
         fetchPhotos();
 
-        // Устанавливаем списки слов
+       
         setUsedWords(data.usedWords || []);
         setUnusedWords(data.unusedWords || []);
         setCurrentWords({
             used: data.usedWords || [],
             unused: data.unusedWords || [],
         });
+        clearSseMessagesInStorage();
+        saveSseMessageToStorage(data.photoAnalyses, 0);
+        saveSseMessageToStorage(data.reviewAnalyses, 2);
+        saveSseMessageToStorage(data.textAnalyses, 1);
 
         setIsInputDisabled(true);
     };
 
-    // Передаем функции через пропсы
     useEffect(() => {
         if (onReset) {
             onReset.current = resetForm;
@@ -238,7 +278,6 @@ export default function AnalysisForm({ onReset, onFill }) {
         }
     }, [onReset, onFill]);
 
-    // Получение данных главного товара
     const fetchMainProductData = async (productId) => {
         let url = getCardUrl(productId);
         let wbResponse;
@@ -283,37 +322,44 @@ export default function AnalysisForm({ onReset, onFill }) {
         };
     };
 
-    // Получение слов с сервера
-    const fetchWordsFromServer = async (productId, token) => {
-        try {
-            const response = await fetch(`http://127.0.0.1:8000/api/v1/get/words/${encodeURIComponent(productId)}`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    throw new Error("Ошибка авторизации. Пожалуйста, войдите снова.");
-                }
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Ошибка сервера при получении слов");
-            }
-
-            const data = await response.json();
-            if (!data) {
-                throw new Error("Пустой ответ от сервера");
-            }
-
-            return data;
-        } catch (error) {
-            throw new Error(handleFetchError(error));
+    const fetchWordsFromServer = async (productId) => {
+        let attempts = 0;
+              const maxAttempts = 2;
+              while (attempts < maxAttempts) {
+        const response = await apiClient.getWords(productId);
+        if (response.type === "ErrorSystem") {
+            // addNotification(response.body);
+            showError(response.body);
+            return null;
         }
+         if (response.type === "Error") {
+            // addNotification(response.body);
+            showError(response.body);
+            return null;
+        }
+        if (response.type === "ErrorToken") {
+            attempts++;
+            const result = await TokenManager.refreshTokens();
+            if (result === "err") {
+                // addNotification(response.body);
+                showError(response.body);
+                setTimeout(router.replace, 3000, "/login");
+                return null;
+            }
+            if (attempts === maxAttempts) {
+                // addNotification(response.body);
+                showError(response.body);
+                setTimeout(router.replace, 3000, "/login");
+                return null;
+            }
+            continue;
+        }
+
+        const data = response.body;
+        return data;
+    }   
     };
 
-    // Поиск продуктов на Wildberries
     const searchWbProducts = async (queries) => {
         try {
             const wbSearchPromises = queries.map(async (query) => {
@@ -347,7 +393,6 @@ export default function AnalysisForm({ onReset, onFill }) {
         }
     };
 
-    // Добавление описаний к продуктам
     const fetchProductDescriptions = async (products) => {
         const descriptionPromises = products.map(async (query) => {
             let url = getCardUrl(query.id);
@@ -397,32 +442,35 @@ export default function AnalysisForm({ onReset, onFill }) {
     };
 
     const fetchReviews = async (root) => {
-        const endpoints = ["feedbacks2.wb.ru", "feedbacks1.wb.ru"];
-
-        for (const endpoint of endpoints) {
-            try {
-                const response = await fetch(`http://${endpoint}/feedbacks/v1/${root}`);
-
-                if (!response.ok) {
-                    console.error(`Failed to fetch reviews from ${endpoint}`);
-                    continue;
-                }
-
-                const data = await response.json();
-                if (data?.feedbacks) {
-                    return data.feedbacks.map((feedback) => ({
-                        text: feedback.text || "",
-                        pros: feedback.pros || "",
-                        cons: feedback.cons || "",
-                    }));
-                }
-            } catch (error) {
-                console.error(`Error fetching reviews from ${endpoint}:`, error);
-            }
-        }
-
-        return [];
-    };
+      const endpoints = ["feedbacks2.wb.ru", "feedbacks1.wb.ru"];
+      const MAX_REVIEWS = 100;
+  
+      for (const endpoint of endpoints) {
+          try {
+              const response = await fetch(`http://${endpoint}/feedbacks/v1/${root}`);
+  
+              if (!response.ok) {
+                  console.error(`Failed to fetch reviews from ${endpoint}`);
+                  continue;
+              }
+  
+              const data = await response.json();
+              if (data?.feedbacks) {
+                  return data.feedbacks
+                      .slice(0, MAX_REVIEWS)
+                      .map((feedback) => ({
+                          text: feedback.text || "",
+                          pros: feedback.pros || "",
+                          cons: feedback.cons || "",
+                      }));
+              }
+          } catch (error) {
+              console.error(`Error fetching reviews from ${endpoint}:`, error);
+          }
+      }
+  
+      return [];
+  };
 
     const fetchMainPhotoUrl = async (mainId) => {
         try {
@@ -453,23 +501,27 @@ export default function AnalysisForm({ onReset, onFill }) {
               while (attempts < maxAttempts) {
                 const response = regenerate ? await apiClient.regenerateTask(currentTaskId, enrichedMainData, enrichedProducts, usedWords, unusedWords) : await apiClient.createTask(enrichedMainData, enrichedProducts, usedWords, unusedWords);
                   if (response.type === "ErrorSystem") {
-                      addNotification(response.body);
+                    setError(response.body);
                       return null;
                   }
                   if (response.type === "ErrorToken") {
                       attempts++;
                       const result = await TokenManager.refreshTokens();
                       if (result === "err") {
-                          addNotification(response.body);
+                        setError(response.body);
                           setTimeout(router.replace, 3000, "/login");
                           return null;
                       }
                       if (attempts === maxAttempts) {
-                          addNotification(response.body);
+                        setError(response.body);
                           setTimeout(router.replace, 3000, "/login");
                           return null;
                       }
                       continue;
+                  }
+                  if (response.type === "Error"){
+                    setError(response.body);
+                    return null;
                   }
             return response;
           }
@@ -499,20 +551,53 @@ export default function AnalysisForm({ onReset, onFill }) {
             return newResults;
         });
 
-        setDisplayedResults((prev) => {
-            const newResults = [...prev];
-            const currentMessage = newResults[index];
-
-            if (currentMessage.includes("Ожидание ответа")) {
-                newResults[index] = targetResult;
-            } else {
-                newResults[index] = currentMessage + targetResult;
+        saveSseMessageToStorage(targetResult, index);
+    };
+    const handleMessage = async (response) => {
+      if (response.type === 'Error' || response.type === 'ErrorSystem') {
+        console.error(response.body);
+        return;
+      }
+      if (response.type === 'Ok' && response.bodyType === 'struct') {
+        if (response.body.message === "<|im_end|>") return;
+        if (response.body.message === "__end__") {
+            const info = getSseMessagesFromStorage();
+            const taskId = localStorage.getItem("sseTaskId");
+            switch (response.body.task_type) {
+                case "photo": 
+                    await apiClient.postTask(taskId, "photo", info[0])
+                    break;
+                case "text":
+                    await apiClient.postTask(taskId, "text", info[1])
+                    break;
+                case "reviews":
+                    await apiClient.postTask(taskId, "reviews", info[2])
+                    break;
             }
-            return newResults;
-        });
+            return;
+        }
+        switch (response.body.task_type) {
+            case "photo":
+                handleDisplayResults(0, response.body.message);
+                break;
+            case "text":
+                handleDisplayResults(1, response.body.message);
+                break;
+            case "reviews":
+                handleDisplayResults(2, response.body.message);
+                break;
+            case "system":
+                if (response.body.message === "done") {
+                    break;
+                }
+              }
+      }
+      if (response.type === 'Done') {
+        console.log('Задача завершена');
+      }
     };
 
-    const initSSEConnection = async (taskId) => {
+    const initSSEConnection = async (taskId, restore = false) => {
         console.log("Starting stream connection");
         try {
             if (controller) {
@@ -524,70 +609,20 @@ export default function AnalysisForm({ onReset, onFill }) {
 
             localStorage.setItem("sseTaskId", taskId);
 
-            // Устанавливаем начальные сообщения
             const initialMessages = [
                 "Ожидание ответа по фоткам...",
                 "Ожидание ответа по тексту...",
                 "Ожидание ответа по отзывам...",
             ];
-            setResults(initialMessages);
-            setDisplayedResults(initialMessages);
-
-            const response = await fetch(`http://localhost:8000/api/v1/information?id=${taskId}`, {
-                signal: newController.signal,
-                headers: {
-                    Accept: "text/plain",
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            if (!restore) {
+                clearSseMessagesInStorage();
+                setResults(initialMessages);
+                setDisplayedResults(initialMessages);
+            } else {
             }
-
-            const reader = response.body.getReader();
-            let buffer = "";
-
-            while (true) {
-                const { done, value } = await reader.read();
-
-                if (done) {
-                    console.log("Stream completed");
-                    break;
-                }
-
-                buffer += new TextDecoder().decode(value);
-                const messagesArray = buffer.split("\n\n");
-                buffer = messagesArray.pop();
-
-                for (const message of messagesArray) {
-                    if (message.trim()) {
-                        try {
-                            const data = JSON.parse(message);
-                            if (data.error) {
-                                showError(data.error);
-                                return;
-                            }
-                            switch (data.task_type) {
-                                case "photo":
-                                    handleDisplayResults(0, data.message);
-                                    break;
-                                case "text":
-                                    handleDisplayResults(1, data.message);
-                                    break;
-                                case "reviews":
-                                    handleDisplayResults(2, data.message);
-                                    break;
-                                case "system":
-                                    if (data.message === "done") {
-                                        break;
-                                    }
-                            }
-                        } catch (error) {
-                            console.error("Failed to parse message:", error, message);
-                        }
-                    }
-                }
-            }
+            const result = await apiClient.streamTaskInformation(taskId, handleMessage);
+            console.log(result.body);
+            
         } catch (error) {
             if (error.name === "AbortError") {
                 console.log("Fetch aborted");
@@ -600,7 +635,22 @@ export default function AnalysisForm({ onReset, onFill }) {
 
     useEffect(() => {
         const savedTaskId = localStorage.getItem("sseTaskId");
-        if (savedTaskId) {
+        const savedMessages = getSseMessagesFromStorage();
+        const savedProductUrl = localStorage.getItem("productAnalysisUrl");
+        if (savedTaskId && savedMessages && Array.isArray(savedMessages)) {
+            setResults(savedMessages);
+            setDisplayedResults(savedMessages);
+            setInput(savedProductUrl || "");
+            setIsInputDisabled(true);
+            setIsMovedUp(true);
+            setIsOverlayVisible(false);
+            initSSEConnection(savedTaskId, true);
+        } else if (savedProductUrl) {
+            setInput(savedProductUrl);
+            setIsInputDisabled(true);
+            setIsMovedUp(true);
+            setIsOverlayVisible(false);
+        } else if (savedTaskId) {
             initSSEConnection(savedTaskId);
         }
 
@@ -618,11 +668,7 @@ export default function AnalysisForm({ onReset, onFill }) {
             return;
         }
 
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-            showError("Ошибка авторизации");
-            return;
-        }
+        localStorage.setItem("productAnalysisUrl", input);
 
         setIsLoading(true);
         try {
@@ -636,7 +682,10 @@ export default function AnalysisForm({ onReset, onFill }) {
             const mainData = await fetchMainProductData(id);
             setMainData(mainData);
 
-            const words = await fetchWordsFromServer(id, token);
+            const words = await fetchWordsFromServer(id);
+            if (words === null) {
+                return;
+            }
             if (words.length === 0) {
                 setError("Увы к сожалению вашего товара нет в списке пожалуйста ожидайте");
                 return;
@@ -706,6 +755,11 @@ export default function AnalysisForm({ onReset, onFill }) {
     };
 
     const handleGenerate = async () => {
+        if (mainData && mainData.id) {
+            const url = `https://www.wildberries.ru/catalog/${mainData.id}/detail.aspx`;
+            localStorage.setItem("productAnalysisUrl", url);
+        }
+        clearSseMessagesInStorage();
         setIsGenerating(true);
         setIsLoading(true);
             const createTaskResponse = await createTaskOnServer(
@@ -727,9 +781,13 @@ export default function AnalysisForm({ onReset, onFill }) {
     };
 
     const handleRegenerate = async () => {
+        if (mainData && mainData.id) {
+            const url = `https://www.wildberries.ru/catalog/${mainData.id}/detail.aspx`;
+            localStorage.setItem("productAnalysisUrl", url);
+        }
+        clearSseMessagesInStorage();
         setIsGenerating(true);
         setIsLoading(true);
-        // const { id: taskId } = await createTaskResponse.body;
         const createTaskResponse = await createTaskOnServer(
           mainData,
           carouselItems,
@@ -743,44 +801,8 @@ export default function AnalysisForm({ onReset, onFill }) {
         setIsLoading(false);
         return;
       }
-      
-            // const mainPhotoUrl = await fetchMainPhotoUrl(mainData.id);
-            // const reviews = await fetchReviews(mainData.root);
-            // const enrichedMainData = { ...mainData, image_url: mainPhotoUrl || mainData.image_url, reviews:  reviews};
-
-            // const enrichedProducts = await Promise.all(products.map(async (product, index) => {
-            //   const reviews = await fetchReviews(product.root);
-            //   return {
-            //     ...product,
-            //     image_url: photoUrls[index] || product.image_url,
-            //     reviews
-            //   };
-            // }));
-
-            // const response = await fetch("http://127.0.0.1:8000/api/v1/regenerate/task/", {
-            //     method: "POST",
-            //     headers: {
-            //         "Content-Type": "application/json",
-            //         Authorization: `Bearer ${token}`,
-            //     },
-            //     body: JSON.stringify({
-            //         id: currentTaskId,
-            //         main: enrichedMainData,
-            //         products: enrichedProducts,
-            //         used_words: currentWords.used,
-            //         unused_words: currentWords.unused,
-            //     }),
-            // });
-
-            // if (!response.ok) {
-            //     const errorData = await response.json();
-            //     throw new Error(errorData.message || "Ошибка при перегенерации задачи");
-            // }
-
             initSSEConnection(currentTaskId);
-
             setIsOverlayVisible(false);
-
             setIsLoading(false);
             setIsGenerating(false);
     };
@@ -842,30 +864,56 @@ export default function AnalysisForm({ onReset, onFill }) {
             </div>
             <div className={styles.answerContainer}>
                 <AnimatePresence>
-                    {displayedResults.map((result, index) => (
-                        <motion.div
-                            key={index}
-                            className={`${styles.horizontalItem} ${
-                                index === 0
-                                    ? styles.photoBlock
-                                    : index === 1
-                                      ? styles.textBlock
-                                      : index === 2
+                    {displayedResults.map((result, index) => {
+                        const isHovered = hoveredBlock === index;
+                        const isExpanded = expandedBlock === index;
+                        if (isExpanded) return null; 
+                        return (
+                            <motion.div
+                                key={index}
+                                className={
+                                    `${styles.horizontalItem} ` +
+                                    (index === 0
+                                        ? styles.photoBlock
+                                        : index === 1
+                                        ? styles.textBlock
+                                        : index === 2
                                         ? styles.reviewBlock
-                                        : ""
-                            }`}
-                            variants={itemVariants}
-                            initial="hidden"
-                            animate="visible"
-                            exit="hidden"
-                        >
-                            <motion.p variants={textVariants} initial="hidden" animate="visible">
-                                {result || ""}
-                            </motion.p>
-                        </motion.div>
-                    ))}
+                                        : "") +
+                                    (isHovered ? ' ' + styles.expandedBlock : '')
+                                }
+                                variants={itemVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit="hidden"
+                                onMouseEnter={() => setHoveredBlock(index)}
+                                onMouseLeave={() => setHoveredBlock(null)}
+                                onClick={() => setExpandedBlock(index)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <motion.p variants={textVariants} initial="hidden" animate="visible">
+                                    {result || ""}
+                                </motion.p>
+                            </motion.div>
+                        );
+                    })}
                 </AnimatePresence>
             </div>
+            {expandedBlock !== null && (
+                <div className={styles.fullscreenOverlay} onClick={() => setExpandedBlock(null)}>
+                    <div
+                        className={styles.fullscreenBlock}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <button className={styles.closeBtn} onClick={() => setExpandedBlock(null)}>
+                            ×
+                        </button>
+                        <div className={styles.fullscreenContent}>
+                            <p>{displayedResults[expandedBlock]}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
             {isMovedUp && (
                 <Button
                     className={styles.settingsBtn}
