@@ -1,26 +1,22 @@
-FROM node:23-alpine3.20 AS builder
+FROM node:lts AS dependencies
+WORKDIR /site
+COPY package.json ./
+RUN npm install --frozen-lockfile && npm audit fix || true
 
-WORKDIR /app
-
-COPY package*.json ./
-
-RUN npm install
-
+FROM node:lts AS builder
+WORKDIR /site
 COPY . .
-
+COPY --from=dependencies /site/node_modules ./node_modules
 RUN npm run build
 
-FROM node:23-alpine3.20
+FROM node:lts AS runner
+WORKDIR /site
+ENV NODE_ENV production
 
-WORKDIR /app
-
-COPY package*.json ./
-
-RUN npm ci --only=production
-
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
+COPY --from=builder /site/public ./public
+COPY --from=builder /site/package.json ./package.json
+COPY --from=builder /site/.next ./.next
+COPY --from=builder /site/node_modules ./node_modules
 
 EXPOSE 3000
-
 CMD ["npm", "start"]
