@@ -19,6 +19,7 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
     const [originalNames, setOriginalNames] = useState({});
     const [notifications, setNotifications] = useState([]);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
     const sidebarRef = useRef(null);
     const taskNameRefs = useRef({});
 
@@ -43,6 +44,17 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
         setIsActive(!isActive);
         if (!isActive) {
             setIsLoading(true);
+            try {
+                const adminResponse = await apiClient.checkAdmin?.();
+                if (adminResponse.type === 'Ok') {
+                    setIsAdmin(true);
+                } else {
+                    setIsAdmin(false);
+                }
+            } catch {
+                setIsAdmin(false);
+            }
+
             const fetchTasks = async () => {
                 let attempts = 0;
                 const maxAttempts = 2;
@@ -493,11 +505,16 @@ export default function Sidebar({ onNewRequest, onTaskSelect }) {
                                 )}
                             </AnimatePresence>
                         </div>
-
-                        <div className={styles.accountButtonContainer}>
+                        <div style={{ flex: 1 }} />
+                        <div className={styles.accountButtonsRow} style={{ marginBottom: 0, marginTop: 'auto', width: '100%' }}>
                             <Button onClick={handleAccountClick} className={styles.accountButton}>
                                 Аккаунт
                             </Button>
+                            {isAdmin && (
+                                <Button onClick={() => router.push('/users')} className={styles.accountButton}>
+                                    Пользователи
+                                </Button>
+                            )}
                         </div>
                     </motion.div>
                 )}

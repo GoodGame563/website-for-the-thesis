@@ -293,3 +293,11 @@
 .accountButton:hover {
     background-color: #0056b3;
 }
+
+.accountButtonsRow {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}

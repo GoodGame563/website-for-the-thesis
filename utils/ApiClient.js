@@ -339,6 +339,10 @@ export class ApiClient {
     return this.request(`/get/words/${encodeURIComponent(productId)}`, 'GET');
   }
 
+  async checkAdmin(){
+    return this.request(`/check/admin`, 'GET');
+  }
+
   async createTask(main, products, usedWords, unusedWords) {
     const body = {
       main,
