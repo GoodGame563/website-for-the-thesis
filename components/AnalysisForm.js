@@ -111,6 +111,8 @@ export default function AnalysisForm({ onReset, onFill }) {
     const [hoveredBlock, setHoveredBlock] = useState(null); 
     const [expandedBlock, setExpandedBlock] = useState(null); 
 
+    const [isDone, setIsDone] = useState(false);
+
     useEffect(() => {
         if (expandedBlock === null) return;
         const handleClick = (e) => {
@@ -541,8 +543,7 @@ export default function AnalysisForm({ onReset, onFill }) {
 
         setResults((prev) => {
             const newResults = [...prev];
-            const currentMessage = newResults[index];
-
+            const currentMessage = newResults[index].replace(/<\|im_end\|>/g, "");
             if (currentMessage.includes("Ожидание ответа")) {
                 newResults[index] = targetResult;
             } else {
@@ -593,6 +594,7 @@ export default function AnalysisForm({ onReset, onFill }) {
               }
       }
       if (response.type === 'Done') {
+        setIsDone(true);
         console.log('Задача завершена');
       }
     };
@@ -663,6 +665,7 @@ export default function AnalysisForm({ onReset, onFill }) {
     }, []);
 
     const handleAnalyze = async () => {
+        setIsDone(false);
         if (!requestRegex.test(input)) {
             showError("Вы не ввели корректный URL");
             return;
@@ -755,6 +758,7 @@ export default function AnalysisForm({ onReset, onFill }) {
     };
 
     const handleGenerate = async () => {
+        setIsDone(false);
         if (mainData && mainData.id) {
             const url = `https://www.wildberries.ru/catalog/${mainData.id}/detail.aspx`;
             localStorage.setItem("productAnalysisUrl", url);
@@ -781,6 +785,7 @@ export default function AnalysisForm({ onReset, onFill }) {
     };
 
     const handleRegenerate = async () => {
+        setIsDone(false);
         if (mainData && mainData.id) {
             const url = `https://www.wildberries.ru/catalog/${mainData.id}/detail.aspx`;
             localStorage.setItem("productAnalysisUrl", url);
@@ -851,14 +856,14 @@ export default function AnalysisForm({ onReset, onFill }) {
                 </motion.div>
                 <Button
                     onClick={isInputDisabled ? (isRestoredTask ? handleRegenerate : handleGenerate) : handleAnalyze}
-                    disabled={isLoading}
-                    isLoading={isLoading}
+                    disabled={isLoading && !isDone}
+                    isLoading={isLoading && !isDone}
                 >
                     <div className={styles.buttonContent}>
                         <span>
-                            {isInputDisabled ? (isRestoredTask ? "Перегенерировать" : "Генерировать") : "Анализ"}
+                            {isDone ? "Генерировать" : (isInputDisabled ? (isRestoredTask ? "Перегенерировать" : "Генерировать") : "Анализ")}
                         </span>
-                        {isLoading && <div className={styles.loading}></div>}
+                        {isLoading && !isDone && <div className={styles.loading}></div>}
                     </div>
                 </Button>
             </div>
