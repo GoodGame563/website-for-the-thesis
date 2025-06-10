@@ -1,0 +1,203 @@
+.container {
+  max-width: 98vw;
+  width: 98vw;
+  margin: 24px auto;
+  padding: 24px 1vw;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+}
+
+.title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.container table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fafbfc;
+}
+
+.container th, .container td {
+  padding: 14px 18px;
+  text-align: left;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.container th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+
+.container tr:last-child td {
+  border-bottom: none;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.actionBtn {
+  margin: 0;
+  margin-bottom: 0;
+  width: 100%;
+  padding: 10px 0;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.actionBtn:last-child {
+  background: #10b981;
+}
+
+.actionBtn:hover {
+  opacity: 0.85;
+}
+
+.backBtn {
+  margin-bottom: 24px;
+  padding: 10px 28px;
+  background: #e5e7eb;
+  color: #222;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+  display: inline-block;
+}
+
+.backBtn:hover {
+  background: #d1d5db;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeInBg 0.25s ease;
+}
+
+@keyframes fadeInBg {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modalWindow {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 28px 24px 28px;
+  min-width: 320px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: modalAppear 0.32s cubic-bezier(.4,1.6,.6,1) both;
+  transform: translateY(30px) scale(0.98);
+}
+
+@keyframes modalAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(60px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modalWindow h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.modalWindow label {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modalWindow input[type="date"] {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+}
+
+.modalActions {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.saveBtn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 22px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+.saveBtn:hover {
+  background: #1749b1;
+}
+.cancelBtn {
+  background: #e5e7eb;
+  color: #222;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 22px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+.cancelBtn:hover {
+  background: #cbd5e1;
+}
+.errorMsg {
+  color: #e11d48;
+  font-size: 0.98rem;
+  margin-top: 2px;
+}
+
+.notification {
+  position: fixed;
+  top: 32px;
+  right: 32px;
+  background: #f87171;
+  color: #fff;
+  padding: 16px 28px;
+  border-radius: 8px;
+  font-size: 1.08rem;
+  font-weight: 500;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.13);
+  z-index: 2000;
+  animation: fadeInNotif 0.3s;
+}
+@keyframes fadeInNotif {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,303 @@
+.toggleBtn {
+  position: fixed;
+  top: 2%;
+  left: 2%;
+  width: 60px; /* Квадратная форма */
+  height: 60px;
+  padding: 0.4rem; /* Центрирование SVG */
+  fill: #fff;
+  z-index: 998;
+}
+
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 30%;
+  max-width: 400px;
+  min-width: 280px;
+  background-color: #f8f9fa;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  overflow-y: auto;
+  will-change: transform;
+  pointer-events: auto;
+}
+
+.hidden {
+  transform: translateX(-100%);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.visible {
+  transform: translateX(0);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.newRequestBtn {
+  width: 100%;
+  margin: 15px 0;
+}
+
+.taskContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 250px;
+  text-align: center;
+}
+
+.taskItem {
+  width: 100%;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 5px 0;
+  padding: 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease; /* Плавные переходы */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.taskItem span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 8px;
+}
+
+.editButton {
+  opacity: 0;
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #666;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.taskItem:hover .editButton {
+  opacity: 1;
+}
+
+.editButton:hover {
+  color: #007BFF;
+}
+
+.deleteButton {
+  opacity: 0;
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #ff4444;
+  transition: opacity 0.2s, color 0.2s, background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+}
+
+.taskItem:hover .deleteButton {
+  opacity: 1;
+}
+
+.deleteButton:hover {
+  background: rgba(255, 68, 68, 0.1);
+  color: #b71c1c;
+}
+
+.editContainer {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  align-items: center;
+}
+
+.editInput {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #007BFF;
+  border-radius: 4px;
+  font-size: inherit;
+  outline: none;
+  background: white;
+}
+
+.saveButton {
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  border: none;
+  background: #007BFF;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.saveButton:hover {
+  background: #0056b3;
+}
+
+.taskItem:hover {
+  background-color: #e0e0e0; /* Более темный фон при наведении */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Увеличенная тень */
+  transform: translateY(-2px); /* Лёгкий подъём вверх */
+}
+
+.active {
+  background: #e6ffe6; /* Светло-зелёный для активных */
+  border: 1px solid #00cc00;
+}
+
+.active:hover {
+  background: #d4ffd4; /* Чуть темнее при наведении для активных */
+}
+
+.inactive {
+  background: #ffe6e6; /* Светло-красный для неактивных */
+  border: 1px solid #ff4444;
+}
+
+.inactive:hover {
+  background: #ffd4d4; /* Чуть темнее при наведении для неактивных */
+}
+
+.storageInfo {
+  color: #666;
+  font-size: 0.9em;
+  margin: 15px 0;
+}
+
+.menuButton {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  transition: all 0.3s ease;
+}
+
+.menuButton:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+
+.menuButton svg {
+  width: 20px;
+  height: 20px;
+  fill: white;
+}
+
+@media (max-width: 768px) {
+  .menuButton {
+    top: 10px;
+    left: 10px;
+    width: 35px;
+    height: 35px;
+    padding: 6px;
+  }
+  
+  .menuButton svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .sidebar {
+    width: 85%;
+    min-width: 250px;
+  }
+}
+
+.notificationList {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.notification {
+  background: #ff4444;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  max-width: 300px;
+  text-align: center;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.accountButtonContainer {
+    margin-top: auto;
+    padding: 1rem;
+    position: sticky;
+    bottom: 0;
+}
+
+.accountButton {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+}
+
+.accountButton:hover {
+    background-color: #0056b3;
+}
+
+.accountButtonsRow {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
