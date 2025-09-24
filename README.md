@@ -65,7 +65,3 @@ The `site` directory provides a Next.js-based frontend for user interaction, ana
 ## Development Notes
 - Next.js, React, Tailwind CSS
 - See thesis for UI/UX and workflow diagrams
-- Refer to `README.alt1.md` and original README for more details
-
----
-This is a highly detailed README for thesis documentation. Do not overwrite the original README if present.
